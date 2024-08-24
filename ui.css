@@ -1,12 +1,14 @@
 
 html {
 	overflow-y: scroll;
+	overflow-x: hidden;
 	scroll-behavior: smooth;
 	content-visibility: auto;
 }
 
 body {
 	overflow-y: hidden;
+	overflow-x: hidden;
 }
 
 .container {
