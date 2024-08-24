@@ -4,8 +4,8 @@
 	"display": "standalone",
 	"id": "/",
 	"start_url": "/",
-	"theme_color": "#EF4E83",
-	"background_color": "#EF4E83",
+	"theme_color": "#FF1277",
+	"background_color": "#FF1277",
 	"icons": [
 		{
 			"src": "https://ipacel.cc/dav/icon.bg@256.png",
