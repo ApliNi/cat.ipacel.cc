@@ -214,6 +214,9 @@ body {
 	}
 }
 @media (prefers-color-scheme: dark) {
+	html {
+		scrollbar-color: #62626280 #0C1017;
+	}
 	.main {
 		#msgList {
 			.msg {
@@ -237,6 +240,9 @@ body {
 	}
 }
 @media (prefers-color-scheme: light) {
+	html {
+		scrollbar-color: #7F7F7F80 #F7F7F7;
+	}
 	.main {
 		#msgList {
 			.msg {
