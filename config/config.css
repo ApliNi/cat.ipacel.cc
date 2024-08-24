@@ -1,0 +1,261 @@
+
+
+
+#screenshot {
+	max-width: 1280px;
+	margin: auto;
+	padding: 12px 24px;
+}
+
+h2, h3 {
+	-webkit-text-stroke: 0.2px #162838;
+}
+
+h3[title] {
+	position: relative;
+
+	&::after {
+		content: '?';
+		font-size: 10px;
+		outline: 2px dashed var(--c);
+		margin: 0 0 10px 5px;
+		position: absolute;
+		top: 8.5px;
+		width: 11px;
+		height: 11px;
+		text-align: center;
+		margin: 0 0 0 7px;
+	}
+}
+
+.mainBodyBox {
+	/* display: flex; */
+	margin: 32px 0;
+
+	& > .side {
+		h2 {
+			-webkit-text-stroke: 0.4px #162838;
+		}
+
+		margin: 20px;
+		width: 100%;
+	}
+
+	& > .side2 {
+		width: 100%;
+		/* background-color: #f7f7f7; */
+		backdrop-filter: blur(5px);
+		outline: 2px dashed var(--c);
+		margin: 0 20px 0 0;
+		padding: 20px;
+		box-shadow: 0 15px 35px rgb(50 50 93 / 15%), 0 5px 15px rgb(0 0 0 / 7%);
+	}
+}
+
+.gridBox {
+	display: grid;
+	grid-template-columns: repeat(4, 25%);
+
+	& > div {
+		margin: 10px 10px 20px 10px;
+	}
+}
+
+@media (max-width: 1280px) {
+	.gridBox {
+		grid-template-columns: repeat(2, 50%);
+	}
+}
+@media (max-width: 720px) {
+	.gridBox {
+		grid-template-columns: repeat(1, 100%);
+	}
+}
+
+.margin20 {
+	margin: 20px;
+}
+
+.cmdBox {
+
+	p {
+		margin: 10px 0;
+	}
+
+	.cmd {
+		margin-bottom: 16px;
+
+		p {
+			/* font-weight: 600; */
+			background-color: #5dccff17;
+			padding: 2px 7px;
+			margin-top: 16px;
+			position: relative;
+			box-shadow: 0 10px 20px rgb(50 50 93 / 1%), 0 5px 15px rgb(0 0 0 / 1%);
+
+			&::before {
+				font-family: 'Ubuntu_and_JetBrainsMono';
+				font-size: 11px;
+				/* font-weight: 400; */
+				position: absolute;
+				top: -14px;
+				color: #7F7F7F80;
+			}
+		}
+
+		.main {
+			font-size: 15px;
+
+			&::before {
+				content: 'COMMAND';
+			}
+		}
+
+		.args {
+			font-size: 13px;
+
+			&::before {
+				content: 'ARGS';
+			}
+		}
+
+		.demo {
+			font-size: 14px;
+
+			&::before {
+				content: 'DEMO';
+			}
+		}
+	}
+}
+
+p.code {
+	background-color: #5dccff17;
+	padding: 2px 7px;
+	box-shadow: 0 10px 20px rgb(50 50 93 / 1%), 0 5px 15px rgb(0 0 0 / 1%);
+	color: var(--c);
+	user-select: all;
+}
+
+/* -- */
+
+.topBar {
+	position: fixed;
+	top: 0;
+	width: 100%;
+	height: 47px;
+	z-index: 1;
+	background-color: #162838;
+	display: flex;
+	align-items: center;
+	padding: 0 24px;
+	box-shadow: 0 15px 35px rgb(50 50 93 / 15%), 0 5px 15px rgb(0 0 0 / 7%);
+
+	.btn {
+		margin: 0px;
+
+		&.right {
+			margin-left: auto;
+		}
+	}
+}
+
+.btn {
+	&.--light {
+		background-color: var(--e);
+	}
+	&.--ban {
+		background-color: var(--greyAuto);
+		pointer-events: none;
+	}
+}
+
+@media (prefers-color-scheme: dark){
+	.topBar {
+		background-color: #0d1118;
+		box-shadow: none;
+		border-bottom: 1px solid #7F7F7F80;
+	}
+
+	.btn {
+		&.--light {
+			background-color: var(--a0);
+			border-color: var(--e);
+		}
+		&.--ban {
+			background-color: var(--a0);
+			border-color: var(--t);
+			pointer-events: none;
+		}
+	}
+}
+
+#screenshot{
+	margin-top: 47px;
+}
+
+dialog {
+	appearance: none;
+	border: none;
+	outline: none;
+	padding: 24px;
+	width: fit-content !important;
+	background-color: var(--a0);
+	color: var(--a1);
+	border-top: 3px solid var(--c);
+	box-shadow: 0 15px 35px rgb(50 50 93 / 15%), 0 5px 15px rgb(0 0 0 / 7%);
+	position: fixed;
+	top: -32vh;
+
+	&:-internal-dialog-in-top-layer::backdrop {
+		/* backdrop-filter: blur(2px); */
+		background: var(--a0);
+	}
+}
+
+input {
+	width: 100%;
+	margin: 10px 0 0 0;
+	border: 1px double var(--t);
+	appearance: none;
+	outline: none;
+	background-color: #00000000;
+}
+
+textarea {
+	background-color: #00000000;
+	border: 1px double var(--t);
+	outline: none;
+	appearance: none;
+	tab-size: 4;
+	resize: vertical;
+	padding: 10px;
+	width: 100%;
+	height: 72px;
+	font-size: 0.75rem;
+	transition: none;
+
+	/* &:focus {
+		height: 247px;
+	} */
+}
+
+label {
+	margin: 14px 0;
+	user-select: none;
+	input {
+		width: 12px;
+		height: 12px;
+		margin: 0 6px 0 0;
+		border: 1px double var(--t);
+		appearance: none;
+		outline: none;
+		background-color: var(--a0);
+	
+		&:checked{
+			border: 6px double var(--c);
+		}
+	}
+}
+
+

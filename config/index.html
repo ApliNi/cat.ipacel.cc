@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="any">
+
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+
+	<title>[CiAt]/ Config</title>
+	
+	<link rel="icon" href="https://ipacel.cc/favicon.ico">
+	<link rel="icon" href="https://ipacel.cc/dav/icon.bg@256.png" sizes="256x256">
+	<link rel="icon" href="https://ipacel.cc/dav/icon.bg@512.png" sizes="512x512">
+
+	<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css">
+	<link rel="stylesheet" href="./config.css?v=10">
+</head>
+
+<body>
+	
+	<dialog id="dog" class="box">
+		<h3>配置到群组</h3>
+		<div id="loginData">
+			<p>正在与 CiAt 建立连接...</p>
+		</div>
+	</dialog>
+
+	<div class="topBar">
+		<button class="btn right" id="btn_deploy" onclick="btn.deploy()">部署</button>
+	</div>
+
+	<div id="screenshot">
+		<div class="mainBodyBox">
+			<div class="side">
+				<h2>对话</h2>
+			</div>
+
+			<div class="side2">
+				<div class="gridBox">
+					<div class="cmdBox">
+						<h3>主要配置</h3>
+						<label for="cfg_msg_enable"><input id="cfg_msg_enable" type="checkbox" name="Function">功能启用</label>
+						<label for="cfg_msg_debug"><input id="cfg_msg_debug" type="checkbox" name="Function">调试模式</label>
+					</div>
+					<div class="cmdBox">
+						<h3 title="通过提示词, 我们可以为机器人定制专属的对话风格和标识, 以及决定机器人的行为方式">提示词</h3>
+						<textarea id="cfg_msg_prompt" placeholder="提示词文本" maxlength="2048"></textarea>
+					</div>
+					<div class="cmdBox">
+						<h3 title="填入用户 QQ 号, 每行一个. 回复时将始终添加艾特标志">以艾特回复</h3>
+						<textarea id="cfg_msg_atList" placeholder="账号列表" maxlength="1024"></textarea>
+					</div>
+				</div>
+				
+				
+			</div>
+		</div>
+
+		<div class="mainBodyBox">
+			<div class="side">
+				<h2>指令</h2>
+			</div>
+
+			<div class="side2">
+
+				<div class="gridBox">
+
+					<div class="cmdBox">
+						<h3>普通指令</h3>
+						<p><label for="cfg_cmd_dynmap"><input id="cfg_cmd_dynmap" type="checkbox" name="Function">网页地图</label></p>
+						<p><label for="cfg_cmd_codec"><input id="cfg_cmd_codec" type="checkbox" name="Function">编解码</label></p>
+						<p><label for="cfg_cmd_sUrl"><input id="cfg_cmd_sUrl" type="checkbox" name="Function">短网址</label></p>
+						<p><label for="cfg_cmd_push"><input id="cfg_cmd_push" type="checkbox" name="Function">视频指标推送</label></p>
+						<p><label for="cfg_cmd_questionBank"><input id="cfg_cmd_questionBank" type="checkbox" name="Function">题库查询</label></p>
+						<p><label for="cfg_cmd_music"><input id="cfg_cmd_music" type="checkbox" name="Function">点歌</label></p>
+						<p><label for="cfg_cmd_card"><input id="cfg_cmd_card" type="checkbox" name="Function">凭证卡片</label></p>
+						<p><label for="cfg_cmd_teaParty"><input id="cfg_cmd_teaParty" type="checkbox" name="Function">茶话会</label></p>
+						<p><label for="cfg_cmd_fishing"><input id="cfg_cmd_fishing" type="checkbox" name="Function">钓鱼</label></p>
+						<p><label for="cfg_cmd_itDog"><input id="cfg_cmd_itDog" type="checkbox" name="Function">ITDog</label></p>
+					</div>
+
+					<div class="cmdBox">
+						<h3>普通指令</h3>
+						<p><label for="cfg_cmd_color"><input id="cfg_cmd_color" type="checkbox" name="Function">色卡</label></p>
+						<p><label for="cfg_cmd_bite"><input id="cfg_cmd_bite" type="checkbox" name="Function">咬</label></p>
+						<p><label for="cfg_cmd_throw"><input id="cfg_cmd_throw" type="checkbox" name="Function">扔</label></p>
+						<p><label for="cfg_cmd_goodNews"><input id="cfg_cmd_goodNews" type="checkbox" name="Function">喜报</label></p>
+						<p><label for="cfg_cmd_badNews"><input id="cfg_cmd_badNews" type="checkbox" name="Function">悲报</label></p>
+						<p><label for="cfg_cmd_luXunSaid"><input id="cfg_cmd_luXunSaid" type="checkbox" name="Function">鲁迅说</label></p>
+						<p><label for="cfg_cmd_luXunQuotes"><input id="cfg_cmd_luXunQuotes" type="checkbox" name="Function">鲁迅语录</label></p>
+						<p><label for="cfg_cmd_light"><input id="cfg_cmd_light" type="checkbox" name="Function">Light</label></p>
+					</div>
+					
+					<div class="cmdBox">
+						<h3>网页地图</h3>
+						<label for="cfg_cmd_dynmapConfig_nopanel"><input id="cfg_cmd_dynmapConfig_nopanel" type="checkbox" name="Function">显示侧边栏</label>
+						<input type="text" id="cfg_cmd_dynmapConfig_site" placeholder="地图地址" maxlength="128" />
+						<input type="text" id="cfg_cmd_dynmapConfig_world" placeholder="默认地图" maxlength="32" />
+						<input type="text" id="cfg_cmd_dynmapConfig_mapName" placeholder="默认地图名称" maxlength="32" />
+						<input type="text" id="cfg_cmd_dynmapConfig_zoom" placeholder="默认缩放级别" maxlength="2" />
+						<input type="text" id="cfg_cmd_dynmapConfig_x" placeholder="默认 X 坐标" maxlength="16" />
+						<input type="text" id="cfg_cmd_dynmapConfig_y" placeholder="默认 Y 坐标" maxlength="16" />
+					</div>
+					
+					<div></div>
+					<div></div>
+				</div>
+
+			</div>
+		</div>
+
+		<div class="mainBodyBox">
+			<div class="side">
+				<h2>推送</h2>
+			</div>
+
+			<div class="side2">
+
+				<div class="gridBox">
+					<div class="cmdBox">
+						<h3>期刊</h3>
+						<p><label for="cfg_push_Nature"><input id="cfg_push_Nature" type="checkbox" name="Function">Nature</label></p>
+						<p><label for="cfg_push_Science"><input id="cfg_push_Science" type="checkbox" name="Function">Science</label></p>
+					</div>
+					<div></div>
+					<div></div>
+					<div></div>
+				</div>
+
+			</div>
+		</div>
+
+		<div class="mainBodyBox">
+			<div class="side">
+				<h2>过滤器</h2>
+			</div>
+
+			<div class="side2">
+
+				<div class="gridBox">
+					<div class="cmdBox">
+						<h3 title="填入用户 QQ 号, 每行一个. 将完全忽略此用户的消息">忽略用户</h3>
+						<textarea id="cfg_filter_ignoreUser" placeholder="账号列表" maxlength="1024"></textarea>
+					</div>
+					<div></div>
+					<div></div>
+					<div></div>
+				</div>
+
+			</div>
+		</div>
+
+	</div>
+
+	<script type="text/javascript">
+		document.getElementById('dog').showModal();
+	</script>
+	<script type="text/javascript" src="./config.js?v=6"></script>
+</body>
+</html>

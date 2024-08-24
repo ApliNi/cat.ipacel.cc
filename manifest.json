@@ -1,0 +1,27 @@
+{
+	"name": "CiAt",
+	"short_name": "CiAt",
+	"display": "standalone",
+	"id": "/",
+	"start_url": "/",
+	"theme_color": "#EF4E83",
+	"background_color": "#EF4E83",
+	"icons": [
+		{
+			"src": "https://ipacel.cc/dav/icon.bg@256.png",
+			"sizes": "256x256",
+			"type": "image/png"
+		},
+		{
+			"src": "https://ipacel.cc/dav/icon.bg@512.png",
+			"sizes": "512x512",
+			"type": "image/png"
+		},
+		{
+			"src": "https://ipacel.cc/dav/icon.bg@512.png",
+			"sizes": "512x512",
+			"type": "image/png",
+			"purpose": "any maskable"
+		}
+	]
+}
