@@ -86,9 +86,16 @@ marked.use({
 			let { lang, raw, text } = token;
 			return `<pre><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, [ lang ]).value}</code></pre>`;
 		},
+		codespan: (token) => {
+			let { lang, raw, text } = token;
+			// console.log(token);
+			let _text = raw.replace(/^`|`$/g, '');
+			return `<code class="hljs">${hljs.highlightAuto(_text).value}</code>`;
+		},
 		html: (token) => {
 			// 这可能不够安全, 可选用 purify.min.js 再次处理
 			try{
+				// console.log(token);
 				return lib.htmlEscape(token.text);
 			}catch(err){
 				console.error(err);
