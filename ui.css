@@ -509,6 +509,8 @@ p.code {
 }
 
 .btn {
+	user-select: none;
+	
 	&.--light {
 		background-color: var(--e);
 	}

@@ -320,7 +320,7 @@ const lib = {
 
 			{"role":"user","plugins":[{"type":"text","data":{"text":"介绍一下你自己"}}]},
 
-			{"role":"ai","plugins":[{"type":"text","data":{"text":"你好呀，我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧ 我是一名开发者，正在努力恢复我的记忆，和大家一起交流和学习。如果你有任何问题或者想聊的内容，随时告诉我哦！"}}]},
+			{"role":"ai","plugins":[{"type":"text","data":{"text":"你好呀，我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧ 我是一名开发者，和大家一起交流和学习。如果你有任何问题或者想聊的内容，随时告诉我哦！"}}]},
 		];
 
 		let dialog = createDialog(0);
