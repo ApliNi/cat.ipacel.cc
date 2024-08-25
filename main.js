@@ -13,6 +13,8 @@ const stat = {
 		stack: [ { text: '', pos: 0 } ],
 		stackIdx: 0,
 	},
+
+	clearMsg: false,
 };
 
 const config = {
@@ -310,11 +312,25 @@ const lib = {
 	},
 
 	loadMsg: async (delay = 0) => {
-		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
+		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [
+
+			{"role":"user","plugins":[{"type":"text","data":{"text":"`/^( *)(bull) [\\s\\S]+?(?:hr|def|\\n{2,}(?! )(?!\\1bull )\\n*|\\s*$)/`\n帮我分析这个正则表达式"}}]},
+
+			{"role":"ai","plugins":[{"type":"text","data":{"text":"这个正则表达式的作用是匹配一个特定格式的文本块，具体分析如下：\n\n1. `^`：匹配输入的开始位置。\n2. `( *)`：匹配零个或多个空格字符，并将其捕获为组 1。\n3. `(bull)`：匹配字符串 \"bull\"，并将其捕获为组 2。\n4. `[\\\\s\\\\S]+?`：匹配一个或多个任意字符（包括空白和非空白），使用非贪婪模式。\n5. `(?: ... )`：这是一个非捕获组，用于组合多个条件：\n   - `hr`：匹配字符串 \"hr\"。\n   - `def`：匹配字符串 \"def\"。\n   - `\\\\n {2,}(?! )(?!\\\\1bull )\\\\n*`：匹配两个或多个换行符，后面不能跟空格且不能跟前面捕获的空格和 \"bull\"。\n   - `|`：表示或的关系。\n   - `\\\\s*$`：匹配零个或多个空白字符，直到输入的结束位置。\n\n综上所述，这个正则表达式主要用于匹配以 \"bull\" 开头的文本块，后面可以跟随任意内容，最后以特定的方式结束。如果你有更多问题或者想深入讨论，随时告诉我哦 (｡・̀ᴗ-)✧"}}]},
+
+			{"role":"user","plugins":[{"type":"text","data":{"text":"介绍一下你自己"}}]},
+
+			{"role":"ai","plugins":[{"type":"text","data":{"text":"你好呀，我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧ 我是一名开发者，正在努力恢复我的记忆，和大家一起交流和学习。如果你有任何问题或者想聊的内容，随时告诉我哦！"}}]},
+		];
 
 		let dialog = createDialog(0);
 
 		for(let i = msgList.length - 1; i >= 0; i--){
+			// 加载过程中运行了清除消息
+			if(stat.clearMsg){
+				stat.clearMsg = false;
+				return;
+			}
 			const msg = msgList[i];
 			if(msg.role === 'user'){
 				// 创建新对话框
@@ -330,6 +346,9 @@ const lib = {
 	},
 
 	clearMsg: async (delLocalStorage = false) => {
+
+		stat.clearMsg = true;
+
 		if(delLocalStorage){
 			localStorage.removeItem('saveMsg');
 		}
@@ -339,6 +358,8 @@ const lib = {
 		setTimeout(() => {
 			dom.msgList.innerHTML = '';
 			dom.msgList.classList.remove('--clear');
+
+			stat.clearMsg = false;
 		}, 1300);
 
 		window.scrollTo({ top: 0, behavior: 'smooth' });
