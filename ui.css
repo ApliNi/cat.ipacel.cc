@@ -140,11 +140,15 @@ body {
 
 			img {
 				max-height: 24vh;
+				min-height: 64px;
+				min-width: 64px;
 				max-width: 100%;
+				width: fit-content;
 				border-radius: 7px;
 				margin: 7px;
 				display: block;
 				-webkit-user-drag: auto;
+				background-color: #5dccff17;
 
 				&.mface {
 					max-height: 17vh;
@@ -219,7 +223,7 @@ body {
 				margin: -1px;
 				appearance: none;
 				border-radius: 0;
-				border: 1px double var(--t);
+				border: 2px double var(--t);
 
 				&:checked {
 					border: 6px double var(--t);

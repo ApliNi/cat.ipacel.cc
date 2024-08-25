@@ -84,7 +84,7 @@ marked.use({
 		},
 		code: (token) => {
 			let { lang, raw, text } = token;
-			return `<pre><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, [ lang ]).value}</code></pre>`;
+			return `<pre><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
