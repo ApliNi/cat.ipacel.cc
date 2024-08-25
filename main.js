@@ -88,8 +88,7 @@ marked.use({
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
-			// console.log(token);
-			let _text = raw.replace(/^`|`$/g, '');
+			let _text = raw.replace(/^`|`$/g, '');	// 绕过 html 转义
 			return `<code class="hljs">${hljs.highlightAuto(_text).value}</code>`;
 		},
 		html: (token) => {
@@ -119,7 +118,7 @@ const renderPluginsMsg = (plugins) => {
 				break;
 			
 			case 'image':
-				htmlList.push(`<img src="${lib.htmlEscape(li.data.file)}" />`);
+				htmlList.push(`<img src="${lib.htmlEscape(li.data.file)}" loading="lazy" />`);
 				break;
 
 			case 'mface':

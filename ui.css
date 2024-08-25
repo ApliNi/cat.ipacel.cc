@@ -162,7 +162,7 @@ body {
 			}
 
 			code {
-				padding: 2px 7px;
+				padding: 1.5px 5px;
 				line-height: 25px;
 				background-color: #7ad5ff12;
 				white-space: pre-wrap;
@@ -194,6 +194,10 @@ body {
 				li::marker {
 					color: #7F7F7F;
 				}
+				&:first-child&:last-child {
+					padding-inline-start: 25px;
+					padding-right: 10px;
+				}
 			}
 
 			ol {
@@ -207,6 +211,19 @@ body {
 				padding: 0 1rem;
 				border-left: 3px solid var(--c);
 				color: #7f7f7f;
+			}
+
+			input {
+				width: 12px;
+				height: 12px;
+				margin: -1px;
+				appearance: none;
+				border-radius: 0;
+				border: 1px double var(--t);
+
+				&:checked {
+					border: 6px double var(--t);
+				}
 			}
 		}
 
@@ -255,13 +272,19 @@ body {
 					::selection {
 						background: #ffffff42;
 					}
-
-					pre {
-						::selection {
+					code {
+						background-color: #E6F2F8;
+						&::selection, *::selection {
 							background: #34beff33;
 						}
-						code {
-							background-color: #E6F2F8;
+					}
+					li::marker {
+						color: #dee7ec;
+					}
+					input {
+						border: 1px double #dee7ec;
+						&:checked {
+							border: 6px double #dee7ec;
 						}
 					}
 				}
