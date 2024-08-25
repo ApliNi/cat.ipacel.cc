@@ -25,9 +25,6 @@ body {
 }
 
 .main {
-	/* max-height: 63vh; */
-	/* min-height: 400px; */
-	/* height: 63vh; */
 	max-width: 740px;
 	width: 100%;
 
@@ -66,6 +63,11 @@ body {
 			padding-bottom: 52px;
 			font-size: 0.875rem;
 			outline: 0;
+
+			&:empty::before{
+				content: attr(placeholder);
+				color: var(--t);
+			}
 
 			img {
 				display: block;
@@ -108,10 +110,6 @@ body {
 	}
 
 	#msgList {
-
-		/* display: flex; */
-		/* flex-direction: column-reverse; */
-
 		content-visibility: auto;
 		margin: -32px;
 		padding: 32px 0 32px 0;
@@ -134,12 +132,10 @@ body {
 			&.user {
 				margin-left: auto;
 				background-color: #06b0ffd1;
-				/* border-top-right-radius: 3px; */
 				color: var(--a0);
 			}
 
 			&.ai {
-				/* border-bottom-left-radius: 3px; */
 				background-color: #f7f7f7b1;
 			}
 
