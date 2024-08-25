@@ -22,8 +22,9 @@ const config = {
 
 const dom = {
 	mainSendBtn: document.querySelector('#mainSendBtn'),
+	mainToolBtn: document.querySelector('#mainToolBtn'),
+	mainToolBox: document.querySelector('#mainToolBox'),
 	mainMsgInp: document.querySelector('#mainMsgInp'),
-	// mainMsgInpHeightTest: document.querySelector('#mainMsgInpHeightTest'),
 	msgList: document.querySelector('#msgList'),
 
 	loginBody: document.querySelector('#loginBody'),
@@ -395,12 +396,15 @@ dom.mainMsgInp.addEventListener('keydown', (event) => {
 	// 自己实现了撤销和重做 :(
 	if(event.ctrlKey){
 		if(event.key === 'z'){
+			event.preventDefault();
 			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx > 0 ? stat.mainMsgInp.stackIdx - 1 : 0;
 			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
 			dom.mainMsgInp.innerText = text;
 			lib.setCaretPos(dom.mainMsgInp, pos);
 		}else if(event.key === 'y'){
-			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx === stat.mainMsgInp.stack.length - 1 ? stat.mainMsgInp.stackIdx : stat.mainMsgInp.stackIdx + 1;
+			event.preventDefault();
+			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx < stat.mainMsgInp.stack.length - 1 ? stat.mainMsgInp.stackIdx + 1 : stat.mainMsgInp.stack.length - 1;
+			console.log(stat.mainMsgInp.stackIdx);
 			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
 			dom.mainMsgInp.innerText = text;
 			lib.setCaretPos(dom.mainMsgInp, pos);
@@ -497,6 +501,16 @@ dom.mainSendBtn.addEventListener('click', async () => {
 	lib.saveMsg('user', uiUserMsgPlugins);
 	
 	socket.send(JSON.stringify({ type:'userMsg', plugins: uiUserMsgPlugins, time, token: lib.token() }));
+});
+
+dom.mainToolBtn.addEventListener('click', async () => {
+
+	if(dom.mainToolBox.classList.contains('--quit')){
+		dom.mainToolBox.classList.remove('--quit');
+	}else{
+		dom.mainToolBox.classList.add('--quit');
+	}
+
 });
 
 window.addEventListener('scroll', () => {
