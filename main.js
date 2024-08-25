@@ -4,13 +4,74 @@ const stat = {
 	connect: false,
 
 	mainMsgInp_125402: false,
+
+	scroll: false,
+
+	mainMsgInp: {
+		text: '',
+		pos: 0,
+		stack: [ { text: '', pos: 0 } ],
+		stackIdx: 0,
+	},
 };
 
 const config = {
 	reconnect: true,
+	mainMsgInpMaxLength: 3972,
+};
+
+const dom = {
+	mainSendBtn: document.querySelector('#mainSendBtn'),
+	mainMsgInp: document.querySelector('#mainMsgInp'),
+	// mainMsgInpHeightTest: document.querySelector('#mainMsgInpHeightTest'),
+	msgList: document.querySelector('#msgList'),
+
+	loginBody: document.querySelector('#loginBody'),
 };
 
 let socket = null;
+
+const _runWebSocket = async () => {
+
+	if(!config.reconnect){
+		return;
+	}
+
+	socket = new WebSocket('wss://cat.ipacel.cc/ws/');
+
+	socket.addEventListener('open', () => {
+		// console.log('[ws] OPEN');
+
+		stat.connect = true;
+	
+		setInterval(() => {
+			socket.send(JSON.stringify({ type: 'keepalive' }));
+		}, 15 * 1000);
+	
+		socket.send(JSON.stringify({ type: 'login', token: lib.token() }));
+	});
+	
+	socket.addEventListener('close', () => {
+		// console.warn('[ws] CLOSE');
+		// location.reload();
+		socket = null;
+		stat.connect = false;
+		stat.login = false;
+		dom.mainSendBtn.classList.add('--ban');
+		_runWebSocket();
+	});
+	
+	socket.addEventListener('message', async (event) => {
+		const msg = JSON.parse(event.data);
+		// console.log(`[ws] MSG: ${msg.type}`, msg);
+		
+		if(fn[msg.type]){
+			await fn[msg.type](msg);
+		}
+	
+	});
+};
+_runWebSocket();
 
 const fn = {
 
@@ -123,6 +184,14 @@ const renderPluginsMsg = (plugins) => {
 
 			case 'mface':
 				htmlList.push(`<img class="mface" src="${lib.htmlEscape(li.data.file)}" />`);
+				break;
+
+			case 'at':
+				htmlList.push(`<div class="at" title="艾特"></div>`);
+				break;
+
+			case 'reply':
+				htmlList.push(`<div class="reply" title="引用"></div>`);
 				break;
 		
 			default:
@@ -293,6 +362,24 @@ const lib = {
 		navigator.clipboard.writeText(text);
 	},
 
+	getCaretPos: (el) => {
+		const range = window.getSelection().getRangeAt(0);
+		const rangeClone = range.cloneRange();
+		rangeClone.selectNodeContents(el);
+		rangeClone.setEnd(range.endContainer, range.endOffset);
+		return rangeClone.toString().length;
+	},
+
+	setCaretPos: (el, pos) => {
+		const range = document.createRange();
+		if(!el.firstChild) return;
+		range.setStart(el.firstChild, pos);
+		range.collapse(true);
+		const sel = window.getSelection();
+		sel.removeAllRanges();
+		sel.addRange(range);
+	},
+
 	htmlEscape: (text) => `${text || ''}`
 		.replace(/&/g, '&amp;')
 		.replace(/</g, '&lt;')
@@ -303,24 +390,85 @@ const lib = {
 
 };
 
-const dom = {
-	mainSendBtn: document.querySelector('#mainSendBtn'),
-	mainMsgInp: document.querySelector('#mainMsgInp'),
-	msgList: document.querySelector('#msgList'),
-
-	loginBody: document.querySelector('#loginBody'),
-};
-
-let uiUserMsgPlugins = [];
-
 dom.mainMsgInp.addEventListener('keydown', (event) => {
-	if(event.keyCode === 13){
+	
+	// 自己实现了撤销和重做 :(
+	if(event.ctrlKey){
+		if(event.key === 'z'){
+			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx > 0 ? stat.mainMsgInp.stackIdx - 1 : 0;
+			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
+			dom.mainMsgInp.innerText = text;
+			lib.setCaretPos(dom.mainMsgInp, pos);
+		}else if(event.key === 'y'){
+			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx === stat.mainMsgInp.stack.length - 1 ? stat.mainMsgInp.stackIdx : stat.mainMsgInp.stackIdx + 1;
+			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
+			dom.mainMsgInp.innerText = text;
+			lib.setCaretPos(dom.mainMsgInp, pos);
+		}
+		return;
+	}
+	
+	if(event.key === 'Enter'){
 		if(!event.shiftKey){
-			event.preventDefault();
-			dom.mainSendBtn.click();
+			// 如果文本中已经存在至少一个换行, 则不发送消息
+			if(!/\n/.test(dom.mainMsgInp.innerText)){
+				event.preventDefault();
+				dom.mainSendBtn.click();
+			}
 		}
 	}
 });
+
+dom.mainMsgInp.addEventListener('paste', (event) => {
+
+	let text = event.clipboardData.getData('text');
+	const maxLength = dom.mainMsgInp.innerText.length + text.length;
+
+	if(maxLength > config.mainMsgInpMaxLength){
+		text = text.slice(0, config.mainMsgInpMaxLength - maxLength);
+		
+		// 插入到当前光标处
+		const pos = lib.getCaretPos(dom.mainMsgInp);
+		const newText = dom.mainMsgInp.innerText.slice(0, pos) + text + dom.mainMsgInp.innerText.slice(pos);
+		
+		dom.mainMsgInp.innerText = newText;
+		// 将光标移动到插入之后的位置
+		lib.setCaretPos(dom.mainMsgInp, pos + text.length);
+
+		// 常规保存
+		stat.mainMsgInp.text = dom.mainMsgInp.innerText;
+		stat.mainMsgInp.pos = pos + text.length;
+	}
+});
+
+dom.mainMsgInp.addEventListener('input', (event) => {
+
+	if(dom.mainMsgInp.innerText.length > config.mainMsgInpMaxLength){
+		dom.mainMsgInp.innerText = stat.mainMsgInp.text;
+		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
+	}else{
+		stat.mainMsgInp.text = dom.mainMsgInp.innerText;
+		stat.mainMsgInp.pos = lib.getCaretPos(dom.mainMsgInp);
+
+		// 支持撤销功能
+		if(stat.mainMsgInp.text !== stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx]?.text){
+			if(stat.mainMsgInp.stackIdx < stat.mainMsgInp.stack.length - 1){
+				stat.mainMsgInp.stack = stat.mainMsgInp.stack.slice(0, stat.mainMsgInp.stackIdx + 1);
+			}
+	
+			stat.mainMsgInp.stack.push({
+				text: stat.mainMsgInp.text,
+				pos: stat.mainMsgInp.pos,
+			});
+			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stack.length - 1;
+	
+			if(stat.mainMsgInp.stack.length > 256){
+				stat.mainMsgInp.stack.shift();
+			}
+		}
+	}
+});
+
 
 dom.mainSendBtn.addEventListener('click', async () => {
 
@@ -328,9 +476,11 @@ dom.mainSendBtn.addEventListener('click', async () => {
 		return;
 	}
 
-	const inpText = dom.mainMsgInp.value.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
+	const uiUserMsgPlugins = [];
+
+	const inpText = dom.mainMsgInp.innerText.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
 	if(inpText){
-		dom.mainMsgInp.value = '';
+		dom.mainMsgInp.innerText = '';
 		uiUserMsgPlugins.push({ type: 'text', data: { text: inpText }});
 	}
 
@@ -347,60 +497,22 @@ dom.mainSendBtn.addEventListener('click', async () => {
 	lib.saveMsg('user', uiUserMsgPlugins);
 	
 	socket.send(JSON.stringify({ type:'userMsg', plugins: uiUserMsgPlugins, time, token: lib.token() }));
-	uiUserMsgPlugins = [];
 });
 
-window.addEventListener('scroll', async () => {
-	
-	// 彩蛋
-	if(stat.mainMsgInp_125402 === false && dom.mainMsgInp.offsetHeight > 125402){
-		stat.mainMsgInp_125402 = true;
-		lib.dog('egg125402', true);
-	}
-});
+window.addEventListener('scroll', () => {
+	if(stat.scroll) return;
+	stat.scroll = true;
+	setTimeout(() => {
+		stat.scroll = false;
 
-const _runWebSocket = async () => {
-
-	if(!config.reconnect){
-		return;
-	}
-
-	socket = new WebSocket('wss://cat.ipacel.cc/ws/');
-
-	socket.addEventListener('open', () => {
-		console.log('[ws] OPEN');
-
-		stat.connect = true;
-	
-		setInterval(() => {
-			socket.send(JSON.stringify({ type: 'keepalive' }));
-		}, 15 * 1000);
-	
-		socket.send(JSON.stringify({ type: 'login', token: lib.token() }));
-	});
-	
-	socket.addEventListener('close', () => {
-		console.warn('[ws] CLOSE');
-		// alert('连接已断开...');
-		// location.reload();
-		socket = null;
-		stat.connect = false;
-		stat.login = false;
-		dom.mainSendBtn.classList.add('--ban');
-		_runWebSocket();
-	});
-	
-	socket.addEventListener('message', async (event) => {
-		const msg = JSON.parse(event.data);
-		console.log(`[ws] MSG: ${msg.type}`, msg);
-		
-		if(fn[msg.type]){
-			await fn[msg.type](msg);
+		// 彩蛋
+		if(stat.mainMsgInp_125402 === false && dom.mainMsgInp.offsetHeight > 125402){
+			stat.mainMsgInp_125402 = true;
+			lib.dog('egg125402', true);
 		}
-	
-	});
-};
-_runWebSocket();
+
+	}, 200);
+});
 
 
 // 启动
@@ -409,6 +521,26 @@ setTimeout(async () => {
 
 	await lib.sleep(100);
 
-	await lib.loadMsg(40);
+	await lib.loadMsg(64);
 }, 100);
 
+dom.mainMsgInp.focus();
+
+
+Promise.resolve().then(console.log(`%c${String.raw`
+ ______                                                            __     
+/\__  _\          %cIpacamod powered by Dev and Our-player%c          /\ \    
+\/_/\ \/    _____     ____     ____   ____    ____ ___     ____   \_\ \   
+   \ \ \   /\  __ \  / __ \   / ___\ / __ \  /  __  __ \  / __ \  / __ \  
+    \_\ \__\ \ \/\ \/\ \/\ \_/\ \__//\ \/\ \_/\ \/\ \/\ \/\ \/\ \/\ \/\ \ 
+    /\_____\\ \  __/\ \__/ \_\ \____\ \__/ \_\ \_\ \_\ \_\ \____/\ \_____\
+    \/_____/ \ \ \/  \/__/\/_/\/____/\/__/\/_/\/_/\/_/\/_/\/___/  \/____ /
+              \ \_\                                                       
+               \/_/       %c[MY THOUGHT? SUFFER WHAT THEREFORE]             
+`}`, 'color: #008FFF', 'color: #17D9FF', 'color: #008FFF', 'color: #80808005'));
+
+Promise.resolve().then(console.log(`
+%c== INFO ==
+ | ApliNi: aplini@ipacel.cc
+ | Code: https://github.com/ApliNi/cat.ipacel.cc
+`, 'color: #FF8C00'));

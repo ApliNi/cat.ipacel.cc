@@ -9,6 +9,8 @@ html {
 body {
 	overflow-y: hidden;
 	overflow-x: hidden;
+	background-image: none;
+	background-color: transparent;
 }
 
 .container {
@@ -31,6 +33,7 @@ body {
 
 	transform: translate(0px, 0px);
 	opacity: 1;
+	transition: all 0.4s ease;
 	&.--quit {
 		.inputBox {
 			transform: translate(0px, 20px);
@@ -52,20 +55,33 @@ body {
 		margin: 20px 0 37px 0;
 
 		#mainMsgInp {
-			appearance: none;
-			border: none;
+			display: block;
 			outline: none;
 			border-radius: 0;
 			background-color: #00000000;
-			transition: none;
 			width: 100%;
-			height: 97px;
-			min-height: 64px;
-			resize: vertical;
+			height: fit-content;
+			min-height: 97px;
 			padding: 16px;
+			padding-bottom: 52px;
+			font-size: 0.875rem;
+			outline: 0;
+
+			img {
+				display: block;
+				max-height: 15vh;
+				min-height: 64px;
+				min-width: 64px;
+				max-width: 30%;
+				width: fit-content;
+				border-radius: 7px;
+				margin: 7px;
+				-webkit-user-drag: auto;
+			}
 		}
 
 		.btn.send {
+			display: block;
 			margin: 0;
 			position: absolute;
 			width: 28px;
@@ -73,6 +89,20 @@ body {
 			right: 14px;
 			bottom: 14px;
 			border-radius: 30%;
+
+			&:hover {
+				filter: brightness(104%);
+			}
+		}
+
+		&::before {
+			content: 'MarkDown';
+			font-family: 'Ubuntu_and_JetBrainsMono';
+			font-size: 11px;
+			position: absolute;
+			right: 13px;
+			top: 3px;
+			color: #7F7F7F80;
 		}
 		
 	}
@@ -131,27 +161,43 @@ body {
 				}
 			}
 
-			opacity: 1;
-			&.--quit {
-				/* margin-top: -20px; */
-				transform: translate(0px, -25px);
-				opacity: 0;
+			&:hover {
+				filter: brightness(101%);
+			}
+
+			div.at, div.reply {
+				position: absolute;
+				width: min-content;
+				height: min-content;
+				padding: 2.4px;
+				top: 7px;
+				left: 7px;
+				border-radius: 100%;
+
+				&.at {
+					background-color: var(--e);
+				}
+
+				&.reply {
+					left: 15px;
+					background-color: var(--g);
+				}
 			}
 
 			img {
-				max-height: 24vh;
-				min-height: 64px;
-				min-width: 64px;
+				display: block;
+				max-height: 20vh;
+				min-height: 128px;
+				min-width: 128px;
 				max-width: 100%;
 				width: fit-content;
 				border-radius: 7px;
 				margin: 7px;
-				display: block;
 				-webkit-user-drag: auto;
 				background-color: #5dccff17;
 
 				&.mface {
-					max-height: 17vh;
+					max-height: 15vh;
 					-webkit-user-drag: none;
 				}
 			}
@@ -223,10 +269,24 @@ body {
 				margin: -1px;
 				appearance: none;
 				border-radius: 0;
-				border: 2px double var(--t);
+				border: 2px solid var(--t);
 
 				&:checked {
-					border: 6px double var(--t);
+					border: 5px double var(--t);
+				}
+			}
+
+			opacity: 1;
+			transition: all 0.4s ease;
+			&.--quit {
+				transform: translate(0px, -25px);
+				background-color: var(--cT) !important;
+				opacity: 0;
+				* {
+					opacity: 0;
+				}
+				input {
+					border-color: transparent !important;
 				}
 			}
 		}
@@ -239,9 +299,43 @@ body {
 		}
 	}
 }
+
+@media (prefers-color-scheme: light) {
+	html {
+		scrollbar-color: #7F7F7F80 #F7F7F7;
+		background-image: url("data:image/svg+xml,<svg id='patternId' width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><defs><pattern id='a' patternUnits='userSpaceOnUse' width='20' height='20' patternTransform='scale(3) rotate(0)'><rect x='0' y='0' width='100%' height='100%' fill='hsla(0, 0%, 97%, 1)'/><path d='M10-6V6M10 14v12M26 10H14M6 10H-6'  stroke-linecap='square' stroke-width='1' stroke='hsla(208, 100%, 51%, 0.12)' fill='none'/></pattern></defs><rect width='800%' height='800%' transform='translate(0,0)' fill='url(%23a)'/></svg>");
+	}
+	.main {
+		#msgList {
+			.msg {
+				&.user {
+					::selection {
+						background: #ffffff42;
+					}
+					code {
+						background-color: #E6F2F8;
+						&::selection, *::selection {
+							background: #34beff33;
+						}
+					}
+					li::marker {
+						color: #dee7ec;
+					}
+					input {
+						border-color: #dee7ec;
+						&:checked {
+							border-color: #dee7ec;
+						}
+					}
+				}
+			}
+		}
+	}
+}
 @media (prefers-color-scheme: dark) {
 	html {
 		scrollbar-color: #62626280 #0C1017;
+		background-image: url("data:image/svg+xml,<svg id='patternId' width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><defs><pattern id='a' patternUnits='userSpaceOnUse' width='20' height='20' patternTransform='scale(3) rotate(0)'><rect x='0' y='0' width='100%' height='100%' fill='hsla(218, 30%, 7%, 1)'/><path d='M10-6V6M10 14v12M26 10H14M6 10H-6'  stroke-linecap='square' stroke-width='1' stroke='hsla(208, 100%, 51%, 0.12)' fill='none'/></pattern></defs><rect width='800%' height='800%' transform='translate(0,0)' fill='url(%23a)'/></svg>");
 	}
 	.main {
 		#msgList {
@@ -264,36 +358,8 @@ body {
 			}
 		}
 	}
-}
-@media (prefers-color-scheme: light) {
-	html {
-		scrollbar-color: #7F7F7F80 #F7F7F7;
-	}
-	.main {
-		#msgList {
-			.msg {
-				&.user {
-					::selection {
-						background: #ffffff42;
-					}
-					code {
-						background-color: #E6F2F8;
-						&::selection, *::selection {
-							background: #34beff33;
-						}
-					}
-					li::marker {
-						color: #dee7ec;
-					}
-					input {
-						border: 1px double #dee7ec;
-						&:checked {
-							border: 6px double #dee7ec;
-						}
-					}
-				}
-			}
-		}
+	.btn {
+		border: 1.5px solid var(--c);
 	}
 }
 
