@@ -14,6 +14,11 @@ const stat = {
 		stackIdx: 0,
 	},
 
+	mainMsgInpAutoSave: {
+		text: '',
+		pos: 0,
+	},
+
 	clearMsg: false,
 };
 
@@ -145,15 +150,15 @@ marked.use({
 	renderer: {
 		link: (token) => {
 			let { href, raw, text, title } = token;
-			return `<a href="${lib.htmlLinkEscape(href)}" target="_blank">${lib.htmlEscape(text)}</a>`;
+			return `<a href="${lib.htmlAttrEscape(href)}" title="${lib.htmlAttrEscape(title || '')}" target="_blank">${lib.htmlEscape(text)}</a>`;
 		},
 		image: (token) => {
 			let { href, raw, text, title } = token;
-			return `<img src="${lib.htmlLinkEscape(href)}" alt="${lib.htmlEscape(text || '没有描述')}" title="${lib.htmlEscape(title)}" loading="lazy" />`;
+			return `<img src="${lib.htmlAttrEscape(href)}" alt="${lib.htmlAttrEscape(text || '没有描述')}" title="${lib.htmlAttrEscape(title)}" loading="lazy" />`;
 		},
 		code: (token) => {
 			let { lang, raw, text } = token;
-			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${lib.htmlEscape(lang || '')} 点击复制`.trim()}">#</button><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${lib.htmlAttrEscape(lang || '')} 点击复制`.trim()}">#</button><code class="hljs" data-lang="${lib.htmlAttrEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
@@ -187,11 +192,11 @@ const renderPluginsMsg = (plugins, dialog) => {
 				break;
 			
 			case 'image':
-				htmlList.push(`<img alt="没有描述, 网络图片" src="${lib.htmlEscape(li.data.file)}" loading="lazy" />`);
+				htmlList.push(`<img alt="没有描述, 网络图片" src="${lib.htmlAttrEscape(li.data.file)}" loading="lazy" />`);
 				break;
 
 			case 'mface':
-				htmlList.push(`<img class="mface" alt="表情图片" src="${lib.htmlEscape(li.data.file)}" />`);
+				htmlList.push(`<img class="mface" alt="表情图片" src="${lib.htmlAttrEscape(li.data.file)}" />`);
 				break;
 
 			case 'at':
@@ -313,27 +318,6 @@ const addMsg = async (dialog, type = 'user', html = '', toTop = false) => {
 
 const lib = {
 
-	saveMsg: async (role, _plugins) => {
-
-		const plugins = [];
-
-		for(const plugin of _plugins){
-			if(plugin.type === 'loading'){
-				continue;
-			}
-			plugins.push(plugin);
-		}
-
-		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
-		msgList.push({ role, plugins });
-
-		for(let i = 0; i < msgList.length - config.saveMsgLength; i++){
-			msgList.shift();
-		}
-
-		localStorage.setItem('saveMsg', JSON.stringify(msgList));
-	},
-
 	loadMsg: async (delay = 0) => {
 		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [
 
@@ -386,6 +370,52 @@ const lib = {
 
 			stat.clearMsg = false;
 		}, 1300);
+	},
+
+	saveMsg: async (role, _plugins) => {
+
+		const plugins = [];
+
+		for(const plugin of _plugins){
+			if(plugin.type === 'loading'){
+				continue;
+			}
+			plugins.push(plugin);
+		}
+
+		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
+		msgList.push({ role, plugins });
+
+		for(let i = 0; i < msgList.length - config.saveMsgLength; i++){
+			msgList.shift();
+		}
+
+		localStorage.setItem('saveMsg', JSON.stringify(msgList));
+	},
+
+	syncMainInpStat: (loadMode = false) => {
+		if(loadMode){
+			stat.mainMsgInp = JSON.parse(localStorage.getItem('mainMsgInpAutoSave')) || stat.mainMsgInp;
+			dom.mainMsgInp.innerText = stat.mainMsgInp.text;
+			lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
+		}else{
+			const { text, pos } = stat.mainMsgInp;
+			if(stat.mainMsgInpAutoSave.text !== text || stat.mainMsgInpAutoSave.pos !== pos){
+				stat.mainMsgInpAutoSave.text = text;
+				stat.mainMsgInpAutoSave.pos = pos;
+				Promise.resolve().then(() => {
+					localStorage.setItem('mainMsgInpAutoSave', JSON.stringify(stat.mainMsgInp));
+				});
+			}
+		}
+	},
+
+	clearMainInpStat: () => {
+		dom.mainMsgInp.innerText = '';
+		stat.mainMsgInp.text = '';
+		stat.mainMsgInp.pos = 0;
+		stat.mainMsgInp.stack = [];
+		stat.mainMsgInp.stackIdx = 0;
 	},
 
 	token: (inp = null) => {
@@ -464,7 +494,7 @@ const lib = {
 		.replace(/\'/g, '&#39;')
 		.replace(/\"/g, '&quot;'),
 	
-	htmlLinkEscape: (text) => `${text || ''}`
+	htmlAttrEscape: (text) => `${text || ''}`
 		.replace(/&/g, '&amp;')
 		.replace(/\"/g, '&quot;'),
 
@@ -563,7 +593,8 @@ dom.mainSendBtn.addEventListener('click', async () => {
 
 	const inpText = dom.mainMsgInp.innerText.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
 	if(inpText){
-		dom.mainMsgInp.innerText = '';
+		lib.clearMainInpStat();
+		lib.syncMainInpStat();
 		uiUserMsgPlugins.push({ type: 'text', data: { text: inpText }});
 	}
 
@@ -619,6 +650,8 @@ Promise.resolve().then(async () => {
 
 	document.querySelector('.main').classList.remove('--quit');
 
+	lib.syncMainInpStat(true);
+
 	if(true){
 		const res = await fetch('./l2/marked-emoji.json');
 		const emojis = await res.json();
@@ -628,7 +661,15 @@ Promise.resolve().then(async () => {
 		}));
 	}
 
+	setInterval(() => {
+		lib.syncMainInpStat();
+	}, 300);
+
 	await lib.loadMsg(64);
+});
+
+window.addEventListener('beforeunload', (event) => {
+	lib.syncMainInpStat();
 });
 
 dom.mainMsgInp.focus();

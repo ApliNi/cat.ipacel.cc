@@ -372,6 +372,10 @@ body {
 				}
 			}
 
+			a {
+				text-decoration: underline 1.5px;
+			}
+
 			.mdEmoji {
 				&::after, &::before {
 					content: ':';
@@ -446,6 +450,9 @@ body {
 					}
 					table td, img {
 						background-color: #dedede17;
+					}
+					a {
+						color: #142df2cc;
 					}
 				}
 			}
