@@ -100,8 +100,9 @@ const fn = {
 		else if(msg.finish === 300){
 
 			dom.loginBody.innerHTML = `
-				<p>1. 加入任意一个存在 CiAt 的<a href="https://qm.qq.com/q/E6eG9gppao" target="_blank"> QQ 群</a></p>
-				<p>2. 点击复制, 将指令发送到群聊或私聊</p>
+				<h3>帮助我们战胜机器人 👾</h3>
+				<p class="paddingLeft15">1. 加入任意一个存在 CiAt 的<a href="https://qm.qq.com/q/E6eG9gppao" target="_blank"> QQ 群</a></p>
+				<p class="paddingLeft15">2. 点击复制, 将指令发送到群聊或私聊</p>
 				<p class="code" onclick="lib.copy(this.textContent)">!WEB ${msg.key}</p>
 			`;
 
@@ -152,7 +153,7 @@ marked.use({
 		},
 		code: (token) => {
 			let { lang, raw, text } = token;
-			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this);" title="复制全部">#</button><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="复制全部">#</button><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
@@ -300,7 +301,7 @@ const addMsg = async (dialog, type = 'user', html = '', toTop = false) => {
 	
 				setTimeout(() => {
 					if(dialog.getAttribute('data-update-time') < Date.now() - 350){
-						// dialog.setAttribute('style', `height: fit-content;`);
+						dialog.setAttribute('style', `height: fit-content;`);
 					}
 				}, 350);
 			});
@@ -417,11 +418,11 @@ const lib = {
 		navigator.clipboard.writeText(text);
 	},
 
-	btnFlash: (el) => {
+	btnFlash: (el, time = 1000) => {
 		el.classList.add('--light');
 		setTimeout(() => {
 			el.classList.remove('--light');
-		}, 1000);
+		}, time);
 	},
 
 	getCaretPos: (el) => {

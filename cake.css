@@ -50,11 +50,11 @@ body, html {margin: 0}
 /*文本*/
 body {line-height: 1.4; word-break: break-word}
 body, pre, code, input, textarea, .no-cake-title-font { /* 正文字体 */
-	font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS';
+	font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS', 'Segoe UI Emoji';
 	color: var(--a1);
 }
 h1, h2, h3, h4, h5, h6, .btn{  /*标题&按钮字体*/
-	margin: 0 0 7px 0;  font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS';
+	margin: 0 0 7px 0;  font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS', 'Segoe UI Emoji';
 }
 
 p{

@@ -1,9 +1,14 @@
 
-html, body {
+html {
+	overflow-y: scroll;
+	overflow-x: hidden;
+}
+
+body {
 	background-image: none;
 	background-color: transparent;
 	
-	overflow-y: scroll;
+	
 	overflow-x: hidden;
 	scroll-behavior: smooth;
 }
@@ -134,7 +139,6 @@ html, body {
 	}
 
 	#msgList {
-		/* content-visibility: auto; */
 		
 		padding: 32px 0 32px 0;
 
@@ -158,6 +162,7 @@ html, body {
 			overflow: hidden;
 
 			&.user {
+				min-width: 50px;
 				margin-left: auto;
 				background-color: #06b0ffd1;
 				color: var(--a0);
@@ -265,8 +270,8 @@ html, body {
 
 				.btn {
 					position: absolute;
-					right: 10px;
-					top: 10px;
+					right: 9px;
+					top: 9px;
 					background-color: #ffffff70;
 					color: var(--greyAuto);
 					opacity: 0.4;
@@ -282,14 +287,6 @@ html, body {
 					padding: 10px;
 					box-shadow: 0px 3px 17px 2px rgb(50 50 93 / 10%), 0 2px 5px rgb(0 0 0 / 7%);
 				}
-			}
-
-			h1, h2, h3, h4, h5, h6 {
-				display: table;
-				padding: 0 10px 0 10px;
-				margin-bottom: 12px;
-				background: linear-gradient(#00000000 50%, var(--cT) 0);
-				color: var(--c);
 			}
 
 			ul {
@@ -483,14 +480,17 @@ p, pre, h1, h2, h3, h4, h5, h6 {
 }
 
 .btn.toTop {
+	width: 32px;
+	height: 32px;
 	position: fixed;
 	bottom: 64px;
 	right: -47px;
-	opacity: 0;
+	z-index: 1;
 
+	opacity: 0;
 	&.--join {
 		opacity: 1;
-		right: 32px;
+		right: 20px;
 	}
 }
 
@@ -526,7 +526,8 @@ dialog {
 		.box {
 			transform: translate(0px, 70px) rotate(10deg);
 			opacity: 0;
-			width: 340px;
+			width: 100%;
+			max-width: 370px;
 			margin: 30vh auto 0 auto;
 		}
 
@@ -541,6 +542,18 @@ dialog {
 		}
 		
 	}
+}
+
+.paddingLeft15 {
+	padding-left: 15px;
+}
+
+h1, h2, h3, h4, h5, h6 {
+	display: table;
+	padding: 0 10px 0 10px;
+	margin-bottom: 12px;
+	background: linear-gradient(#00000000 50%, var(--cT) 0);
+	color: var(--c);
 }
 
 p.code {

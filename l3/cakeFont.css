@@ -18,17 +18,17 @@
 }
 
 body, pre, code, input, textarea { /* 正文字体 */
-	font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS' !important;
+	font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS', 'Segoe UI Emoji' !important;
 
 	* {
-		font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS' !important;
+		font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS', 'Segoe UI Emoji' !important;
 	}
 }
 
 h1, h2, h3, h4, h5, h6, button{  /*标题&按钮字体*/
-	font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS' !important;
+	font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS', 'Segoe UI Emoji' !important;
 
 	* {
-		font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS' !important;
+		font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS', 'Segoe UI Emoji' !important;
 	}
 }
