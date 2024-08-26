@@ -21,8 +21,10 @@ const config = {
 	reconnect: true,
 	mainMsgInpMaxLength: 3972,
 	saveMsgLength: 256,
-	// .msg 边距 + .li 渲染区域扩大
-	liMsgHeightOffset: 25 + 32,
+	// .msg 外边距
+	liMsgHeightOffset: 25,
+	// .li 内边距
+	liHeightOffset: 32 + 32,
 };
 
 const dom = {
@@ -237,7 +239,7 @@ const createDialog = (time, top = true) => {
 	return dialog;
 };
 
-const delMsg = async (dialog, el, reHeight = false) => {
+const delMsg = async (dialog, el, reHeight = true) => {
 
 	if(reHeight){
 		const height = dialog.offsetHeight - el.offsetHeight - config.liMsgHeightOffset;
@@ -256,7 +258,7 @@ const delMsg = async (dialog, el, reHeight = false) => {
 	}, 500);
 };
 
-const addMsg = async (dialog, type = 'user', html = '', top = false) => {
+const addMsg = async (dialog, type = 'user', html = '', toTop = false) => {
 
 	try{
 		requestAnimationFrame(() => {
@@ -269,7 +271,7 @@ const addMsg = async (dialog, type = 'user', html = '', top = false) => {
 			if(comp.length === 1 && comp[0].tagName === 'IMG'){
 				msg.classList.add('single_img');
 			}
-			if(top){
+			if(toTop){
 				if(dialog.firstChild){
 					dialog.insertBefore(msg, dialog.firstChild);
 				}else{
@@ -280,20 +282,25 @@ const addMsg = async (dialog, type = 'user', html = '', top = false) => {
 			}
 
 			// 超出视口范围就不需要渲染过度动画了
-			if(!lib.inViewport(msg, 0.4)){
+			if(!lib.inViewport(dialog, 0.4)){
 				msg.classList.remove('--quit');
 				dialog.setAttribute('style', `height: fit-content;`);
 				return;
 			}
 	
 			requestAnimationFrame(() => {
-				msg.classList.remove('--quit');
-				const height = Array.from(dialog.childNodes).reduce((acc, child) => child.classList.contains('--neglect') ? acc : acc + child.offsetHeight + config.liMsgHeightOffset, 0);
+
+				const height = Array.from(dialog.childNodes).reduce((acc, child) =>
+					child.classList.contains('--neglect') ? acc : acc + child.offsetHeight + config.liMsgHeightOffset,
+					0
+				) + config.liHeightOffset;
+				
 				dialog.setAttribute('style', `height: ${height}px;`);
+				msg.classList.remove('--quit');
 	
 				setTimeout(() => {
 					if(dialog.getAttribute('data-update-time') < Date.now() - 350){
-						dialog.setAttribute('style', `height: fit-content;`);
+						// dialog.setAttribute('style', `height: fit-content;`);
 					}
 				}, 350);
 			});
@@ -304,17 +311,6 @@ const addMsg = async (dialog, type = 'user', html = '', top = false) => {
 };
 
 const lib = {
-
-	_token: null,
-	token: (inp = null) => {
-		lib._token = inp || localStorage.getItem('token');
-		if(inp){
-			localStorage.setItem('token', inp);
-		}
-		return lib._token;
-	},
-
-	sleep: (time) => new Promise((resolve) => setTimeout(resolve, time)),
 
 	saveMsg: async (role, _plugins) => {
 
@@ -360,11 +356,11 @@ const lib = {
 			const msg = msgList[i];
 			if(msg.role === 'user'){
 				// 创建新对话框
-				addMsg(dialog, 'user', renderPluginsMsg(msg.plugins, dialog), true);
+				addMsg(dialog, 'user', renderPluginsMsg(msg.plugins, dialog), true, true);
 				dialog = createDialog(0, false);
 			}
 			if(msg.role === 'ai'){
-				addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog), true);
+				addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog), true, true);
 			}
 
 			await lib.sleep(delay);
@@ -390,6 +386,17 @@ const lib = {
 			stat.clearMsg = false;
 		}, 1300);
 	},
+
+	token: (inp = null) => {
+		if(inp){
+			localStorage.setItem('token', inp);
+			return inp;
+		}else{
+			return localStorage.getItem('token');
+		}
+	},
+
+	sleep: (time) => new Promise((resolve) => setTimeout(resolve, time)),
 
 	dog: async (name, stat) => {
 		const dog = document.getElementById('dog');
@@ -435,9 +442,9 @@ const lib = {
 		sel.addRange(range);
 	},
 
-	inViewport: (el, redundancyRatio = 0) => {
+	inViewport: (el, redundancyRatio = 0.0) => {
 		const rect = el.getBoundingClientRect();
-		
+
 		const winHeight = window.innerHeight || document.documentElement.clientHeight;
 		const top = rect.top - (rect.bottom - rect.top) + winHeight * redundancyRatio;
 		
@@ -567,7 +574,7 @@ dom.mainSendBtn.addEventListener('click', async () => {
 
 	lib.saveMsg('user', uiUserMsgPlugins);
 	
-	socket.send(JSON.stringify({ type:'userMsg', plugins: uiUserMsgPlugins, time, token: lib.token() }));
+	socket.send(JSON.stringify({ type:'userMsg', plugins: uiUserMsgPlugins, time }));
 });
 
 dom.mainToolBtn.addEventListener('click', async () => {
