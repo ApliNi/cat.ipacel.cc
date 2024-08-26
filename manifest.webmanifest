@@ -1,11 +1,18 @@
 {
 	"name": "CiAt",
-	"short_name": "CiAt",
-	"display": "standalone",
+	"description": " (｡・̀ᴗ-)✧ CiAt, the chatbot for the IpacEL",
+	"version": "3.10",
 	"id": "/",
-	"start_url": "/",
+	"start_url": "/?mode=pwa",
+	"protocol_handlers": [
+		{
+			"protocol": "web+ipaciat",
+			"url": "/?mode=pwa&ipaciat=%s"
+		}
+	],
+	"display": "standalone",
 	"theme_color": "#FF1277",
-	"background_color": "#FF1277",
+	"background_color": "#323232",
 	"icons": [
 		{
 			"src": "https://ipacel.cc/dav/icon.bg@256.png",
@@ -16,12 +23,6 @@
 			"src": "https://ipacel.cc/dav/icon.bg@512.png",
 			"sizes": "512x512",
 			"type": "image/png"
-		},
-		{
-			"src": "https://ipacel.cc/dav/icon.bg@512.png",
-			"sizes": "512x512",
-			"type": "image/png",
-			"purpose": "any maskable"
 		}
 	]
 }

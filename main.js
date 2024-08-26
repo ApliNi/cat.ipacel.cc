@@ -145,15 +145,15 @@ marked.use({
 	renderer: {
 		link: (token) => {
 			let { href, raw, text, title } = token;
-			return `<a href="${href}" target="_blank">${text}</a>`;
+			return `<a href="${lib.htmlLinkEscape(href)}" target="_blank">${lib.htmlEscape(text)}</a>`;
 		},
 		image: (token) => {
 			let { href, raw, text, title } = token;
-			return `<img src="${href}" alt="${text}" title="${title}" loading="lazy" />`;
+			return `<img src="${lib.htmlLinkEscape(href)}" alt="${lib.htmlEscape(text || '没有描述')}" title="${lib.htmlEscape(title)}" loading="lazy" />`;
 		},
 		code: (token) => {
 			let { lang, raw, text } = token;
-			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="复制全部">#</button><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${lib.htmlEscape(lang || '')} 点击复制`.trim()}">#</button><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
@@ -187,11 +187,11 @@ const renderPluginsMsg = (plugins, dialog) => {
 				break;
 			
 			case 'image':
-				htmlList.push(`<img src="${lib.htmlEscape(li.data.file)}" loading="lazy" />`);
+				htmlList.push(`<img alt="没有描述, 网络图片" src="${lib.htmlEscape(li.data.file)}" loading="lazy" />`);
 				break;
 
 			case 'mface':
-				htmlList.push(`<img class="mface" src="${lib.htmlEscape(li.data.file)}" />`);
+				htmlList.push(`<img class="mface" alt="表情图片" src="${lib.htmlEscape(li.data.file)}" />`);
 				break;
 
 			case 'at':
@@ -463,6 +463,10 @@ const lib = {
 		.replace(/ /g, '&nbsp;')
 		.replace(/\'/g, '&#39;')
 		.replace(/\"/g, '&quot;'),
+	
+	htmlLinkEscape: (text) => `${text || ''}`
+		.replace(/&/g, '&amp;')
+		.replace(/\"/g, '&quot;'),
 
 };
 
@@ -603,19 +607,34 @@ window.addEventListener('scroll', () => {
 	}, 200);
 });
 
+//PWA
+if(window.matchMedia('(display-mode: standalone)').matches){
+	document.title = '';
+}else{
+	document.title = 'CiAt';
+}
 
 // 启动
-setTimeout(async () => {
+Promise.resolve().then(async () => {
+
 	document.querySelector('.main').classList.remove('--quit');
 
-	await lib.sleep(100);
+	if(true){
+		const res = await fetch('./l2/marked-emoji.json');
+		const emojis = await res.json();
+		marked.use(markedEmoji.markedEmoji({
+			emojis: emojis,
+			renderer: (token) => `<span class="mdEmoji">${token.emoji}</span>`,
+		}));
+	}
 
 	await lib.loadMsg(64);
-}, 100);
+});
 
 dom.mainMsgInp.focus();
 lib.toTop();
 
+// 完成
 Promise.resolve().then(console.log(`%c${String.raw`
  ______                                                            __     
 /\__  _\          %cIpacamod powered by Dev and Our-player%c          /\ \    
