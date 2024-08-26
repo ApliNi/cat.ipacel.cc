@@ -86,7 +86,6 @@ const _runWebSocket = async () => {
 	
 	});
 };
-_runWebSocket();
 
 const fn = {
 
@@ -288,7 +287,7 @@ const addMsg = async (dialog, type = 'user', html = '', toTop = false) => {
 			}
 
 			// 超出视口范围就不需要渲染过度动画了
-			if(!lib.inViewport(dialog, 0.4)){
+			if(!lib.inViewport(dialog, 0.3)){
 				msg.classList.remove('--quit');
 				dialog.setAttribute('style', `height: fit-content;`);
 				return;
@@ -341,11 +340,11 @@ const lib = {
 			const msg = msgList[i];
 			if(msg.role === 'user'){
 				// 创建新对话框
-				addMsg(dialog, 'user', renderPluginsMsg(msg.plugins, dialog), true, true);
+				addMsg(dialog, 'user', renderPluginsMsg(msg.plugins, dialog), true);
 				dialog = createDialog(0, false);
 			}
 			if(msg.role === 'ai'){
-				addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog), true, true);
+				addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog), true);
 			}
 
 			await lib.sleep(delay);
@@ -648,6 +647,8 @@ if(window.matchMedia('(display-mode: standalone)').matches){
 // 启动
 Promise.resolve().then(async () => {
 
+	_runWebSocket();
+
 	document.querySelector('.main').classList.remove('--quit');
 
 	lib.syncMainInpStat(true);
@@ -665,11 +666,11 @@ Promise.resolve().then(async () => {
 		lib.syncMainInpStat();
 	}, 300);
 
-	await lib.loadMsg(64);
-});
+	window.addEventListener('beforeunload', (event) => {
+		lib.syncMainInpStat();
+	});
 
-window.addEventListener('beforeunload', (event) => {
-	lib.syncMainInpStat();
+	await lib.loadMsg(64);
 });
 
 dom.mainMsgInp.focus();
