@@ -19,12 +19,12 @@
 	<link rel="manifest" href="./manifest.json?v=2">
 
 	<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css?v=2">
-	<link rel="stylesheet" href="./ui.css?v=24.16">
+	<link rel="stylesheet" href="./ui.css?v=24.33">
 	<link rel="stylesheet" href="./l2/highlight.css?v=2">
 
 	<script src="./l2/marked.min.js?v=2" defer></script>
 	<script src="./l2/highlight.min.js?v=2" defer></script>
-	<script src="./main.js?v=12.5" defer></script>
+	<script src="./main.js?v=12.15" defer></script>
 </head>
 <body>
 	<div id="container" class="container">
@@ -47,21 +47,17 @@
 			<div id="msgList"></div>
 		</div>
 
-		<dialog id="dog">
-
-			<div class="modal login">
-				<div id="loginBody" class="box"></div>
-			</div>
-
-			<div class="modal egg125402">
-				<div id="egg125402Body" class="box">
-					<p class="code" onclick="lib.copy('(｡・̀ᴗ-)✧'); lib.dog('egg125402', false);">该停下来啦</p>
-				</div>
-			</div>
-
-		</dialog>
-
 		<div style="height: 12.6vh"></div>
 	</div>
+
+	<button id="toTopBtn" class="btn toTop" onclick="lib.toTop()" title="回到顶部">^</button>
+
+	<dialog id="dog">
+
+		<div class="modal login">
+			<div id="loginBody" class="box"></div>
+		</div>
+
+	</dialog>
 </body>
 </html>

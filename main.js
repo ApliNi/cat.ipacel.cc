@@ -20,6 +20,9 @@ const stat = {
 const config = {
 	reconnect: true,
 	mainMsgInpMaxLength: 3972,
+	saveMsgLength: 256,
+	// .msg 边距 + .li 渲染区域扩大
+	liMsgHeightOffset: 25 + 32,
 };
 
 const dom = {
@@ -30,6 +33,8 @@ const dom = {
 	msgList: document.querySelector('#msgList'),
 
 	loginBody: document.querySelector('#loginBody'),
+
+	toTopBtn: document.querySelector('#toTopBtn'),
 };
 
 let socket = null;
@@ -104,10 +109,7 @@ const fn = {
 
 	'userMsg': async (msg) => {
 
-		dom.mainSendBtn.classList.add('--light');
-		setTimeout(() => {
-			dom.mainSendBtn.classList.remove('--light');
-		}, 1000);
+		lib.btnFlash(dom.mainSendBtn);
 
 		const dialog = dom.msgList.querySelector(`.li.time_${msg.time}`);
 		if(!dialog){
@@ -118,7 +120,7 @@ const fn = {
 			delMsg(dialog, loading);
 		}
 		
-		addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins));
+		addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog));
 
 		lib.saveMsg('ai', msg.plugins);
 	},
@@ -148,7 +150,7 @@ marked.use({
 		},
 		code: (token) => {
 			let { lang, raw, text } = token;
-			return `<pre><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this);" title="复制全部">#</button><code class="hljs" data-lang="${lib.htmlEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
@@ -172,7 +174,7 @@ const markdownRender = (text) => {
 	return marked.parse(text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, ''));
 };
 
-const renderPluginsMsg = (plugins) => {
+const renderPluginsMsg = (plugins, dialog) => {
 	const htmlList = [];
 	for(const li of plugins){
 		switch(li.type){
@@ -190,11 +192,17 @@ const renderPluginsMsg = (plugins) => {
 				break;
 
 			case 'at':
-				htmlList.push(`<div class="at" title="艾特"></div>`);
+				htmlList.push(`<div class="at __markIgnore" title="艾特"></div>`);
 				break;
 
 			case 'reply':
-				htmlList.push(`<div class="reply" title="引用"></div>`);
+				htmlList.push(`<div class="reply __markIgnore" title="引用"></div>`);
+				break;
+
+			case 'loading':
+				setTimeout(() => {
+					addMsg(dialog, 'loading');
+				}, 50);
 				break;
 		
 			default:
@@ -220,7 +228,7 @@ const createDialog = (time, top = true) => {
 	}
 	
 
-	for(let i = 0; i < dom.msgList.childNodes.length - 100; i++){
+	for(let i = 0; i < dom.msgList.childNodes.length - config.saveMsgLength; i++){
 		dom.msgList.removeChild(dom.msgList.firstChild);
 	}
 
@@ -232,10 +240,10 @@ const createDialog = (time, top = true) => {
 const delMsg = async (dialog, el, reHeight = false) => {
 
 	if(reHeight){
-		const height = dialog.offsetHeight - el.offsetHeight - cssCfg.liMsgMarginBottom;
+		const height = dialog.offsetHeight - el.offsetHeight - config.liMsgHeightOffset;
 		dialog.setAttribute('style', `height: ${height}px;`);
 	}
-	el.setAttribute('style', `margin-top: -${el.offsetHeight + cssCfg.liMsgMarginBottom}px;`);
+	el.setAttribute('style', `margin-top: -${el.offsetHeight + config.liMsgHeightOffset}px;`);
 	el.classList.add('--quit');
 	el.classList.add('--neglect');
 
@@ -250,41 +258,49 @@ const delMsg = async (dialog, el, reHeight = false) => {
 
 const addMsg = async (dialog, type = 'user', html = '', top = false) => {
 
-	requestAnimationFrame(() => {
-		dialog.setAttribute('data-update-time', Date.now());
-		const msg = document.createElement('div');
-		msg.innerHTML = html;
-		msg.setAttribute('class', `msg ${type} --quit`);
-		// 如果只有一个 img 元素
-		if(msg.children.length === 1 && msg.children[0].tagName === 'IMG'){
-			msg.classList.add('single_img');
-		}
-		if(top){
-			if(dialog.firstChild){
-				dialog.insertBefore(msg, dialog.firstChild);
+	try{
+		requestAnimationFrame(() => {
+			dialog.setAttribute('data-update-time', Date.now());
+			const msg = document.createElement('div');
+			msg.innerHTML = html;
+			msg.setAttribute('class', `msg ${type} --quit`);
+			// 如果只有一个 img 元素
+			const comp = Array.from(msg.children).filter((child) => !child.classList.contains('__markIgnore'));
+			if(comp.length === 1 && comp[0].tagName === 'IMG'){
+				msg.classList.add('single_img');
+			}
+			if(top){
+				if(dialog.firstChild){
+					dialog.insertBefore(msg, dialog.firstChild);
+				}else{
+					dialog.appendChild(msg);
+				}
 			}else{
 				dialog.appendChild(msg);
 			}
-		}else{
-			dialog.appendChild(msg);
-		}
 
-		requestAnimationFrame(() => {
-			msg.classList.remove('--quit');
-			const height = Array.from(dialog.childNodes).reduce((acc, child) => child.classList.contains('--neglect') ? acc : acc + child.offsetHeight + cssCfg.liMsgMarginBottom, 0);
-			dialog.setAttribute('style', `height: ${height}px;`);
-
-			setTimeout(() => {
-				if(dialog.getAttribute('data-update-time') < Date.now() - 350){
-					dialog.setAttribute('style', `height: fit-content;`);
-				}
-			}, 350);
+			// 超出视口范围就不需要渲染过度动画了
+			if(!lib.inViewport(msg, 0.4)){
+				msg.classList.remove('--quit');
+				dialog.setAttribute('style', `height: fit-content;`);
+				return;
+			}
+	
+			requestAnimationFrame(() => {
+				msg.classList.remove('--quit');
+				const height = Array.from(dialog.childNodes).reduce((acc, child) => child.classList.contains('--neglect') ? acc : acc + child.offsetHeight + config.liMsgHeightOffset, 0);
+				dialog.setAttribute('style', `height: ${height}px;`);
+	
+				setTimeout(() => {
+					if(dialog.getAttribute('data-update-time') < Date.now() - 350){
+						dialog.setAttribute('style', `height: fit-content;`);
+					}
+				}, 350);
+			});
 		});
-	});
-};
-
-const cssCfg = {
-	liMsgMarginBottom: 25,
+	}catch(err){
+		console.warn('[addMsg]', err);
+	}
 };
 
 const lib = {
@@ -300,11 +316,21 @@ const lib = {
 
 	sleep: (time) => new Promise((resolve) => setTimeout(resolve, time)),
 
-	saveMsg: async (role, plugins) => {
+	saveMsg: async (role, _plugins) => {
+
+		const plugins = [];
+
+		for(const plugin of _plugins){
+			if(plugin.type === 'loading'){
+				continue;
+			}
+			plugins.push(plugin);
+		}
+
 		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
 		msgList.push({ role, plugins });
 
-		for(let i = 0; i < msgList.length - 100; i++){
+		for(let i = 0; i < msgList.length - config.saveMsgLength; i++){
 			msgList.shift();
 		}
 
@@ -334,11 +360,11 @@ const lib = {
 			const msg = msgList[i];
 			if(msg.role === 'user'){
 				// 创建新对话框
-				addMsg(dialog, 'user', renderPluginsMsg(msg.plugins), true);
+				addMsg(dialog, 'user', renderPluginsMsg(msg.plugins, dialog), true);
 				dialog = createDialog(0, false);
 			}
 			if(msg.role === 'ai'){
-				addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins), true);
+				addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog), true);
 			}
 
 			await lib.sleep(delay);
@@ -348,6 +374,8 @@ const lib = {
 	clearMsg: async (delLocalStorage = false) => {
 
 		stat.clearMsg = true;
+
+		lib.toTop();
 
 		if(delLocalStorage){
 			localStorage.removeItem('saveMsg');
@@ -361,8 +389,6 @@ const lib = {
 
 			stat.clearMsg = false;
 		}, 1300);
-
-		window.scrollTo({ top: 0, behavior: 'smooth' });
 	},
 
 	dog: async (name, stat) => {
@@ -384,6 +410,13 @@ const lib = {
 		navigator.clipboard.writeText(text);
 	},
 
+	btnFlash: (el) => {
+		el.classList.add('--light');
+		setTimeout(() => {
+			el.classList.remove('--light');
+		}, 1000);
+	},
+
 	getCaretPos: (el) => {
 		const range = window.getSelection().getRangeAt(0);
 		const rangeClone = range.cloneRange();
@@ -400,6 +433,19 @@ const lib = {
 		const sel = window.getSelection();
 		sel.removeAllRanges();
 		sel.addRange(range);
+	},
+
+	inViewport: (el, redundancyRatio = 0) => {
+		const rect = el.getBoundingClientRect();
+		
+		const winHeight = window.innerHeight || document.documentElement.clientHeight;
+		const top = rect.top - (rect.bottom - rect.top) + winHeight * redundancyRatio;
+		
+		return top > 0 && top < winHeight;
+	},
+
+	toTop: async () => {
+		window.scrollTo({ top: 0, behavior: 'smooth' });
 	},
 
 	htmlEscape: (text) => `${text || ''}`
@@ -516,7 +562,7 @@ dom.mainSendBtn.addEventListener('click', async () => {
 	const time = Date.now();
 	
 	const dialog = createDialog(time);
-	addMsg(dialog, 'user', renderPluginsMsg(uiUserMsgPlugins));
+	addMsg(dialog, 'user', renderPluginsMsg(uiUserMsgPlugins, dialog));
 	addMsg(dialog, 'loading');
 
 	lib.saveMsg('user', uiUserMsgPlugins);
@@ -540,10 +586,10 @@ window.addEventListener('scroll', () => {
 	setTimeout(() => {
 		stat.scroll = false;
 
-		// 彩蛋
-		if(stat.mainMsgInp_125402 === false && dom.mainMsgInp.offsetHeight > 125402){
-			stat.mainMsgInp_125402 = true;
-			lib.dog('egg125402', true);
+		if(!lib.inViewport(dom.mainMsgInp, 0.2)){
+			dom.toTopBtn.classList.add('--join');
+		}else{
+			dom.toTopBtn.classList.remove('--join');
 		}
 
 	}, 200);
@@ -560,7 +606,7 @@ setTimeout(async () => {
 }, 100);
 
 dom.mainMsgInp.focus();
-
+lib.toTop();
 
 Promise.resolve().then(console.log(`%c${String.raw`
  ______                                                            __     

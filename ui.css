@@ -1,16 +1,11 @@
 
-html {
+html, body {
+	background-image: none;
+	background-color: transparent;
+	
 	overflow-y: scroll;
 	overflow-x: hidden;
 	scroll-behavior: smooth;
-	content-visibility: auto;
-}
-
-body {
-	overflow-y: hidden;
-	overflow-x: hidden;
-	background-image: none;
-	background-color: transparent;
 }
 
 .container {
@@ -94,25 +89,19 @@ body {
 		}
 
 		.btn {
-			display: block;
-			margin: 0;
 			position: absolute;
-			width: 28px;
-			height: 27px;
 			right: 14px;
 			bottom: 14px;
-			border-radius: 30%;
 
 			&:hover {
 				filter: brightness(104%);
 			}
 			&:active {
-				filter: brightness(85%);
+				filter: brightness(94%);
 			}
 
 			&.tool {
 				right: 52px;
-				background-color: var(--a0);
 				color: var(--a1);
 			}
 		}
@@ -130,7 +119,6 @@ body {
 			.btn {
 				pointer-events: auto;
 				position: unset;
-				background-color: var(--a0);
 				color: var(--a1);
 			}
 
@@ -146,12 +134,16 @@ body {
 	}
 
 	#msgList {
-		content-visibility: auto;
-		margin: -32px;
+		/* content-visibility: auto; */
+		
 		padding: 32px 0 32px 0;
 
 		.li {
-			margin: 0 32px;
+			content-visibility: auto;
+			width: calc(100% + 64px);
+			margin: -64px 0 0 -32px;
+			padding: 32px;
+
 			height: 0px;
 		}
 
@@ -217,6 +209,7 @@ body {
 				top: 7px;
 				left: 7px;
 				border-radius: 100%;
+				box-shadow: 0px 3px 17px 2px rgb(50 50 93 / 10%), 0 2px 5px rgb(0 0 0 / 7%);
 
 				&.at {
 					background-color: var(--e);
@@ -239,6 +232,7 @@ body {
 				margin: 7px;
 				-webkit-user-drag: auto;
 				background-color: #5dccff17;
+				box-shadow: 0px 3px 17px 2px rgb(50 50 93 / 10%), 0 2px 5px rgb(0 0 0 / 7%);
 
 				&.mface {
 					max-height: 15vh;
@@ -267,6 +261,21 @@ body {
 			pre {
 				tab-size: 4;
 				font-size: 14px;
+				position: relative;
+
+				.btn {
+					position: absolute;
+					right: 10px;
+					top: 10px;
+					background-color: #ffffff70;
+					color: var(--greyAuto);
+					opacity: 0.4;
+				}
+				&:hover {
+					.btn {
+						opacity: 0.8;
+					}
+				}
 
 				code {
 					display: block;
@@ -353,9 +362,23 @@ body {
 @media (prefers-color-scheme: light) {
 	html {
 		scrollbar-color: #7F7F7F80 #F7F7F7;
+	}
+	body {
 		background-image: url("data:image/svg+xml,<svg id='patternId' width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><defs><pattern id='a' patternUnits='userSpaceOnUse' width='20' height='20' patternTransform='scale(3) rotate(0)'><rect x='0' y='0' width='100%' height='100%' fill='hsla(0, 0%, 97%, 1)'/><path d='M10-6V6M10 14v12M26 10H14M6 10H-6'  stroke-linecap='square' stroke-width='1' stroke='hsla(208, 100%, 51%, 0.12)' fill='none'/></pattern></defs><rect width='800%' height='800%' transform='translate(0,0)' fill='url(%23a)'/></svg>");
 	}
+
+	.btn {
+		background-color: var(--a0);
+	}
+
 	.main {
+		.inputBox {
+			.btn {
+				&.send {
+					background-color: var(--c);
+				}
+			}
+		}
 		#msgList {
 			.msg {
 				&.user {
@@ -381,26 +404,28 @@ body {
 			}
 		}
 	}
+
+	.btn.toTop {
+		background-color: var(--c);
+	}
 }
 @media (prefers-color-scheme: dark) {
 	html {
 		scrollbar-color: #62626280 #0C1017;
+	}
+	body {
 		background-image: url("data:image/svg+xml,<svg id='patternId' width='100%' height='100%' xmlns='http://www.w3.org/2000/svg'><defs><pattern id='a' patternUnits='userSpaceOnUse' width='20' height='20' patternTransform='scale(3) rotate(0)'><rect x='0' y='0' width='100%' height='100%' fill='hsla(218, 30%, 7%, 1)'/><path d='M10-6V6M10 14v12M26 10H14M6 10H-6'  stroke-linecap='square' stroke-width='1' stroke='hsla(208, 100%, 51%, 0.12)' fill='none'/></pattern></defs><rect width='800%' height='800%' transform='translate(0,0)' fill='url(%23a)'/></svg>");
 	}
+
+	.btn {
+		background-color: #212121d1;
+	}
+
 	.main {
 		.inputBox {
 			.btn {
-				border: none;
-				&.tool {
-					background-color: #212121d1;
-				}
 				&.send {
 					background-color: #15559ad4;
-				}
-			}
-			#mainToolBox {
-				.btn {
-					background-color: #212121d1;
 				}
 			}
 		}
@@ -420,6 +445,12 @@ body {
 				&.loading {
 					background-color: #212121d1;
 					/* border: var(--e) solid 1px; */
+				}
+
+				pre {
+					.btn {
+						background-color: rgba(33, 33, 33, 0.82);
+					}
 				}
 			}
 		}
@@ -448,6 +479,18 @@ p, pre, h1, h2, h3, h4, h5, h6 {
 	}
 	&:last-child {
 		margin-bottom: 5px !important;
+	}
+}
+
+.btn.toTop {
+	position: fixed;
+	bottom: 64px;
+	right: -47px;
+	opacity: 0;
+
+	&.--join {
+		opacity: 1;
+		right: 32px;
 	}
 }
 
@@ -510,12 +553,20 @@ p.code {
 
 .btn {
 	user-select: none;
+	border: none;
 	
+	display: block;
+	margin: 0;
+	width: 28px;
+	height: 27px;
+	border-radius: 30%;
+
 	&.--light {
-		background-color: var(--e);
+		background-color: var(--e) !important;
+		color: #fff !important;
 	}
 	&.--ban {
-		background-color: var(--greyAuto);
-		pointer-events: none;
+		background-color: #555555 !important;
+		pointer-events: none !important;
 	}
 }

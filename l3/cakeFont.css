@@ -1,0 +1,34 @@
+
+@font-face {
+	font-family: 'HarmonyOS';
+	font-display: swap;
+	src: url('https://ipacel.cc/dav/HarmonyOS_Sans_SC_Medium.subset.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'JetBrainsMono';
+	font-display: swap;
+	src: url('https://ipacel.cc/dav/JetBrainsMono-Regular.woff2') format('woff2');
+}
+@font-face {
+	font-family: 'Ubuntu_and_JetBrainsMono';
+	font-display: swap;
+	src: url('https://ipacel.cc/dav/Ubuntu-Regular.subset.woff2?v=2') format('woff2'),
+		 local("JetBrainsMono");
+	word-spacing: -5px;
+}
+
+body, pre, code, input, textarea { /* 正文字体 */
+	font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS' !important;
+
+	* {
+		font-family: 'JetBrainsMono', 'PingFang SC', 'HarmonyOS' !important;
+	}
+}
+
+h1, h2, h3, h4, h5, h6, button{  /*标题&按钮字体*/
+	font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS' !important;
+
+	* {
+		font-family: 'Ubuntu_and_JetBrainsMono', 'HarmonyOS', 'Trebuchet MS' !important;
+	}
+}
