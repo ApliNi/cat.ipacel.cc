@@ -19,7 +19,7 @@
 	<link rel="manifest" href="./manifest.webmanifest?v=3.10">
 
 	<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css?v=1.101">
-	<link rel="stylesheet" href="./ui.css?v=24.48">
+	<link rel="stylesheet" href="./ui.css?v=24.55">
 	<link rel="stylesheet" href="./l2/highlight.css?v=2">
 	<link rel="stylesheet" href="./l2/katex/katex.min.css?v=0.16.11">
 
@@ -27,6 +27,11 @@
 	<script src="./l2/highlight.min.js?v=2" defer></script>
 	<script src="./l2/marked-emoji.js" defer></script>
 	<script src="./l2/katex/katex.min.js?v=0.16.11" defer></script>
+
+	<script type="module" defer>
+		import { lib } from './main.js?v=12.22.49';
+		window.lib = lib;
+	</script>
 
 	<link rel="preload" href="./l2/marked-extended-latex.js" as="script" crossorigin="anonymous">
 	<link rel="preload" href="./l2/marked-emoji.json" as="fetch" crossorigin="anonymous">
@@ -36,11 +41,6 @@
 	<link rel="preload" href="https://ipacel.cc/dav/HarmonyOS_Sans_SC_Medium.subset.woff2" as="font" crossorigin="anonymous">
 	<link rel="preload" href="https://ipacel.cc/dav/JetBrainsMono-Regular.woff2" as="font" crossorigin="anonymous">
 	<link rel="preload" href="https://ipacel.cc/dav/Ubuntu-Regular.subset.woff2?v=2" as="font" crossorigin="anonymous">
-
-	<script type="module" defer>
-		import { lib } from './main.js?v=12.22.30';
-		window.lib = lib;
-	</script>
 
 	<script>
 		window.WebFontConfig = {

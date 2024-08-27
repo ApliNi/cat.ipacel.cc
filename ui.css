@@ -8,7 +8,7 @@ body {
 	background-image: none;
 	background-color: transparent;
 	
-	
+	overflow-y: hidden;
 	overflow-x: hidden;
 	scroll-behavior: smooth;
 }
@@ -53,7 +53,7 @@ body {
 		overflow: hidden;
 
 		&::before {
-			content: 'MarkDown';
+			content: 'MarkDown ✦ LaTeX';
 			font-family: 'Ubuntu_and_JetBrainsMono';
 			font-size: 11px;
 			position: absolute;
@@ -87,7 +87,7 @@ body {
 				min-height: 64px;
 				min-width: 64px;
 				max-width: 30%;
-				width: fit-content;
+				/* width: fit-content; */
 				border-radius: 7px;
 				margin: 7px;
 				-webkit-user-drag: auto;
@@ -150,6 +150,13 @@ body {
 			padding: 32px;
 
 			height: 0px;
+		}
+
+		opacity: 1;
+		&.--clear {
+			transition: all 1.1s ease;
+			opacity: 0;
+			transform: translate(0px, 100vh);
 		}
 
 		.msg {
@@ -384,6 +391,20 @@ body {
 				}
 			}
 
+			.dice {
+				&.dice, &.rps{
+					margin: 0 6px;
+					&::after {
+						content: ']';
+						opacity: 0.75;
+					}
+					&::before {
+						content: '[';
+						opacity: 0.75;
+					}
+				}
+			}
+
 			opacity: 1;
 			transition: all 0.4s ease;
 			&.--quit {
@@ -397,13 +418,6 @@ body {
 					border-color: transparent !important;
 				}
 			}
-		}
-
-		opacity: 1;
-		&.--clear {
-			transition: all 1.2s ease;
-			opacity: 0;
-			transform: translate(0px, 100vh);
 		}
 	}
 }
@@ -541,7 +555,7 @@ p, pre, h1, h2, h3, h4, h5, h6 {
 	width: 32px;
 	height: 32px;
 	position: fixed;
-	bottom: 64px;
+	bottom: 84px;
 	right: -47px;
 	z-index: 1;
 
@@ -549,6 +563,7 @@ p, pre, h1, h2, h3, h4, h5, h6 {
 	&.--join {
 		opacity: 1;
 		right: 20px;
+		bottom: 64px;
 	}
 }
 

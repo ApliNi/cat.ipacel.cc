@@ -154,7 +154,8 @@ marked.use({
 	renderer: {
 		link: (token) => {
 			let { href, raw, text, title } = token;
-			return `<a href="${lib.htmlAttrEscape(href)}" title="${lib.htmlAttrEscape(title || '')}" target="_blank">${lib.htmlEscape(text)}</a>`;
+			const safetyHref = lib.htmlAttrEscape(href);
+			return `<a href="${safetyHref}" title="${lib.htmlAttrEscape(title || '')}" target="_blank" title="${safetyHref}">${lib.htmlEscape(text)}</a>`;
 		},
 		image: (token) => {
 			let { href, raw, text, title } = token;
@@ -162,7 +163,8 @@ marked.use({
 		},
 		code: (token) => {
 			let { lang, raw, text } = token;
-			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${lib.htmlAttrEscape(lang || '')} 点击复制`.trim()}">#</button><code class="hljs" data-lang="${lib.htmlAttrEscape(lang)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			const safetyLang = lib.htmlAttrEscape(lang || '');
+			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${safetyLang} 点击复制`.trim()}">#</button><code class="hljs" data-lang="${safetyLang}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
@@ -196,7 +198,7 @@ const renderPluginsMsg = (plugins, dialog) => {
 				break;
 			
 			case 'image':
-				htmlList.push(`<img alt="没有描述, 网络图片" src="${lib.htmlAttrEscape(li.data.file)}" loading="lazy" />`);
+				htmlList.push(`<img alt="没有描述, 网络图片" src="${lib.htmlAttrEscape(li.data.file)}" loading="lazy" onclick="lib.openImg(this)" />`);
 				break;
 
 			case 'mface':
@@ -212,12 +214,12 @@ const renderPluginsMsg = (plugins, dialog) => {
 				break;
 
 			case 'dice':
-				htmlList.push(`<span>[🎲: ${li.idx}]</span>`);
+				htmlList.push(`<span class="dice dice">🎲: ${li.idx}</span>`);
 				break;
 
 			case 'rps':
 				const rps = [ '✌️', '✊', '🖐️' ];
-				htmlList.push(`<span>[${rps[li.idx]}]</span>`);
+				htmlList.push(`<span class="dice rps">${rps[li.idx]}</span>`);
 				break;
 
 			case 'loading':
@@ -382,7 +384,7 @@ export const lib = {
 			dom.msgList.classList.remove('--clear');
 
 			stat.clearMsg = false;
-		}, 1300);
+		}, 1150);
 	},
 
 	saveMsg: async (role, _plugins) => {
@@ -455,6 +457,38 @@ export const lib = {
 				dog.close();
 			}, 210);
 		}
+	},
+
+	openImg: (img) => {
+		const src = img.getAttribute('src');
+		const alt = img.getAttribute('alt');
+		const width = img.naturalWidth;
+		const height = img.naturalHeight;
+
+		const maxWidth = screen.width * 0.6;
+		const maxHeight = screen.height * 0.6;
+
+		const ratio = width / height;
+		let setWidth, setHeight;
+		if(maxWidth <= maxHeight * ratio){
+			setWidth = maxWidth;
+			setHeight = maxWidth / ratio;
+		}else{
+			setHeight = maxHeight;
+			setWidth = maxHeight * ratio;
+		}
+		setWidth = Math.min(setWidth, width);
+		setHeight = Math.min(setHeight, height);
+
+		if(setWidth === 0 || setWidth === 0){
+			return;
+		}
+
+		const left = (screen.width - setWidth) / 2;
+		const top = (screen.height - setHeight) / 2;
+
+		const params = `fullscreen=no, titlebar=no, status=no, location=no, toolbar=no, menubar=no, width=${setWidth}, height=${setHeight}, left=${left}, top=${top}`;
+		window.open(`./img.html?src=${encodeURIComponent(src)}`, `img_${src}`, params);
 	},
 
 	copy: (text) => {
