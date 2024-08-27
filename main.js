@@ -1,3 +1,4 @@
+import markedExtendedLatex from "./l2/marked-extended-latex.js";
 
 const stat = {
 	login: false,
@@ -144,6 +145,10 @@ const fn = {
 	},
 };
 
+marked.use(markedExtendedLatex({
+	render: (formula, displayMode) => katex.renderToString(formula, { displayMode }),
+}));
+
 marked.use({
 	breaks: true,
 	renderer: {
@@ -204,6 +209,15 @@ const renderPluginsMsg = (plugins, dialog) => {
 
 			case 'reply':
 				htmlList.push(`<div class="reply __markIgnore" title="引用"></div>`);
+				break;
+
+			case 'dice':
+				htmlList.push(`<span>[🎲: ${li.idx}]</span>`);
+				break;
+
+			case 'rps':
+				const rps = [ '✌️', '✊', '🖐️' ];
+				htmlList.push(`<span>[${rps[li.idx]}]</span>`);
 				break;
 
 			case 'loading':
@@ -315,7 +329,7 @@ const addMsg = async (dialog, type = 'user', html = '', toTop = false) => {
 	}
 };
 
-const lib = {
+export const lib = {
 
 	loadMsg: async (delay = 0) => {
 		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [

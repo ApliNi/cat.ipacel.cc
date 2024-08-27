@@ -74,6 +74,7 @@ body {
 			padding-bottom: 52px;
 			font-size: 0.875rem;
 			outline: 0;
+			cursor: url('https://ipacel.cc/dav/command_3.png'), default;
 
 			&:empty::before{
 				content: attr(placeholder);
@@ -452,7 +453,7 @@ body {
 						background-color: #dedede17;
 					}
 					a {
-						color: #142df2cc;
+						color: #e3f0ff;
 					}
 				}
 			}
