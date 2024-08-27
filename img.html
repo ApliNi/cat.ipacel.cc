@@ -125,7 +125,7 @@
 
 				// 如果元素 (即将) 超出视口, 则重置位置
 				const rect = img.getBoundingClientRect();
-				const stat = rect.left > (window.innerWidth - window.innerWidth * 0.07) || rect.right < 0 || rect.top > (window.innerHeight - window.innerHeight * 0.07) || rect.bottom < 0;
+				const stat = rect.left > (window.innerWidth - window.innerWidth * 0.07) || rect.right < window.innerWidth * 0.07 || rect.top > (window.innerHeight - window.innerHeight * 0.07) || rect.bottom < window.innerHeight * 0.07;
 				if(stat){
 					onResize();
 				}
