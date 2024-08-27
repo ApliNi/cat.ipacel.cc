@@ -63,6 +63,7 @@ body {
 		}
 
 		#mainMsgInp {
+			white-space: pre-line;
 			display: block;
 			outline: none;
 			border-radius: 0;
@@ -104,6 +105,10 @@ body {
 			}
 			&:active {
 				filter: brightness(94%);
+			}
+
+			&.send {
+				font-family: 'Trebuchet MS';
 			}
 
 			&.tool {
@@ -170,7 +175,6 @@ body {
 			overflow: hidden;
 
 			&.user {
-				min-width: 50px;
 				margin-left: auto;
 				background-color: #06b0ffd1;
 				color: var(--a0);

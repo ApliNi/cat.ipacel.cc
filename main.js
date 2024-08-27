@@ -1,6 +1,6 @@
 import markedExtendedLatex from "./l2/marked-extended-latex.js";
 
-const stat = {
+export const stat = {
 	login: false,
 	connect: false,
 
@@ -18,6 +18,7 @@ const stat = {
 	mainMsgInpAutoSave: {
 		text: '',
 		pos: 0,
+		stackIdx: 0,
 	},
 
 	clearMsg: false,
@@ -410,14 +411,18 @@ export const lib = {
 
 	syncMainInpStat: (loadMode = false) => {
 		if(loadMode){
-			stat.mainMsgInp = JSON.parse(localStorage.getItem('mainMsgInpAutoSave')) || stat.mainMsgInp;
-			dom.mainMsgInp.innerText = stat.mainMsgInp.text;
-			lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
+			try{
+				stat.mainMsgInp = JSON.parse(localStorage.getItem('mainMsgInpAutoSave')) || stat.mainMsgInp;
+				const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
+				dom.mainMsgInp.textContent = text;
+				lib.setCaretPos(dom.mainMsgInp, pos);
+			}catch(ignoreErr){}
 		}else{
-			const { text, pos } = stat.mainMsgInp;
-			if(stat.mainMsgInpAutoSave.text !== text || stat.mainMsgInpAutoSave.pos !== pos){
+			const { text, pos, stackIdx } = stat.mainMsgInp;
+			if(stat.mainMsgInpAutoSave.text !== text || stat.mainMsgInpAutoSave.pos !== pos || stat.mainMsgInpAutoSave.stackIdx !== stackIdx){
 				stat.mainMsgInpAutoSave.text = text;
 				stat.mainMsgInpAutoSave.pos = pos;
+				stat.mainMsgInpAutoSave.stackIdx = stackIdx;
 				Promise.resolve().then(() => {
 					localStorage.setItem('mainMsgInpAutoSave', JSON.stringify(stat.mainMsgInp));
 				});
@@ -426,10 +431,12 @@ export const lib = {
 	},
 
 	clearMainInpStat: () => {
-		dom.mainMsgInp.innerText = '';
+		dom.mainMsgInp.textContent = '';
 		stat.mainMsgInp.text = '';
 		stat.mainMsgInp.pos = 0;
-		stat.mainMsgInp.stack = [];
+		stat.mainMsgInp.stack = [
+			{ text: '', pos: 0 }
+		];
 		stat.mainMsgInp.stackIdx = 0;
 	},
 
@@ -513,11 +520,15 @@ export const lib = {
 	setCaretPos: (el, pos) => {
 		const range = document.createRange();
 		if(!el.firstChild) return;
-		range.setStart(el.firstChild, pos);
-		range.collapse(true);
-		const sel = window.getSelection();
-		sel.removeAllRanges();
-		sel.addRange(range);
+		try{
+			range.setStart(el.firstChild, pos);
+			range.collapse(true);
+			const sel = window.getSelection();
+			sel.removeAllRanges();
+			sel.addRange(range);
+		}catch(err){
+			console.error(err);
+		}
 	},
 
 	inViewport: (el, redundancyRatio = 0.0) => {
@@ -555,15 +566,16 @@ dom.mainMsgInp.addEventListener('keydown', (event) => {
 			event.preventDefault();
 			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx > 0 ? stat.mainMsgInp.stackIdx - 1 : 0;
 			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
-			dom.mainMsgInp.innerText = text;
+			dom.mainMsgInp.textContent = text;
 			lib.setCaretPos(dom.mainMsgInp, pos);
+			lib.syncMainInpStat();
 		}else if(event.key === 'y'){
 			event.preventDefault();
 			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx < stat.mainMsgInp.stack.length - 1 ? stat.mainMsgInp.stackIdx + 1 : stat.mainMsgInp.stack.length - 1;
-			console.log(stat.mainMsgInp.stackIdx);
 			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
-			dom.mainMsgInp.innerText = text;
+			dom.mainMsgInp.textContent = text;
 			lib.setCaretPos(dom.mainMsgInp, pos);
+			lib.syncMainInpStat();
 		}
 		return;
 	}
@@ -571,7 +583,7 @@ dom.mainMsgInp.addEventListener('keydown', (event) => {
 	if(event.key === 'Enter'){
 		if(!event.shiftKey){
 			// 如果文本中已经存在至少一个换行, 则不发送消息
-			if(!/\n/.test(dom.mainMsgInp.innerText)){
+			if(!/\n/.test(dom.mainMsgInp.textContent)){
 				event.preventDefault();
 				dom.mainSendBtn.click();
 			}
@@ -581,34 +593,47 @@ dom.mainMsgInp.addEventListener('keydown', (event) => {
 
 dom.mainMsgInp.addEventListener('paste', (event) => {
 
-	let text = event.clipboardData.getData('text');
-	const maxLength = dom.mainMsgInp.innerText.length + text.length;
+	event.preventDefault();
 
-	if(maxLength > config.mainMsgInpMaxLength){
-		text = text.slice(0, config.mainMsgInpMaxLength - maxLength);
-		
-		// 插入到当前光标处
-		const pos = lib.getCaretPos(dom.mainMsgInp);
-		const newText = dom.mainMsgInp.innerText.slice(0, pos) + text + dom.mainMsgInp.innerText.slice(pos);
-		
-		dom.mainMsgInp.innerText = newText;
-		// 将光标移动到插入之后的位置
-		lib.setCaretPos(dom.mainMsgInp, pos + text.length);
-
-		// 常规保存
-		stat.mainMsgInp.text = dom.mainMsgInp.innerText;
-		stat.mainMsgInp.pos = pos + text.length;
+	// 如果有选中文本
+	const range = window.getSelection().getRangeAt(0);
+	const startOffset = range.startOffset;
+	const endOffset = range.endOffset;
+	if(startOffset < endOffset){
+		// 删除选中文本
+		const newText = dom.mainMsgInp.textContent.slice(0, startOffset) + dom.mainMsgInp.textContent.slice(endOffset);
+		dom.mainMsgInp.textContent = newText;
+		lib.setCaretPos(dom.mainMsgInp, startOffset);
 	}
+
+	let text = event.clipboardData.getData('text');
+	const maxLength = dom.mainMsgInp.textContent.length + text.length;
+
+	text = text.slice(0, config.mainMsgInpMaxLength - maxLength);
+		
+	// 插入到当前光标处
+	const pos = lib.getCaretPos(dom.mainMsgInp);
+	const newText = dom.mainMsgInp.textContent.slice(0, pos) + text + dom.mainMsgInp.textContent.slice(pos);
+	
+	dom.mainMsgInp.textContent = newText;
+	// 将光标移动到插入之后的位置
+	lib.setCaretPos(dom.mainMsgInp, pos + text.length);
+
+	// 触发输入事件
+	dom.mainMsgInp.dispatchEvent(new Event('input'));
 });
 
 dom.mainMsgInp.addEventListener('input', (event) => {
 
-	if(dom.mainMsgInp.innerText.length > config.mainMsgInpMaxLength){
-		dom.mainMsgInp.innerText = stat.mainMsgInp.text;
+	if(dom.mainMsgInp.textContent.length > config.mainMsgInpMaxLength){
+		dom.mainMsgInp.textContent = stat.mainMsgInp.text;
 		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
 	}else{
-		stat.mainMsgInp.text = dom.mainMsgInp.innerText;
+		stat.mainMsgInp.text = dom.mainMsgInp.textContent;
 		stat.mainMsgInp.pos = lib.getCaretPos(dom.mainMsgInp);
+
+		dom.mainMsgInp.textContent = dom.mainMsgInp.textContent;
+		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
 
 		// 支持撤销功能
 		if(stat.mainMsgInp.text !== stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx]?.text){
@@ -629,6 +654,13 @@ dom.mainMsgInp.addEventListener('input', (event) => {
 	}
 });
 
+dom.mainMsgInp.addEventListener('click', () => {
+	stat.mainMsgInp.pos = lib.getCaretPos(dom.mainMsgInp);
+	stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx].pos = stat.mainMsgInp.pos;
+	lib.syncMainInpStat();
+});
+
+
 
 dom.mainSendBtn.addEventListener('click', async () => {
 
@@ -638,7 +670,7 @@ dom.mainSendBtn.addEventListener('click', async () => {
 
 	const uiUserMsgPlugins = [];
 
-	const inpText = dom.mainMsgInp.innerText.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
+	const inpText = dom.mainMsgInp.textContent.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
 	if(inpText){
 		lib.clearMainInpStat();
 		lib.syncMainInpStat();
@@ -739,6 +771,6 @@ Promise.resolve().then(console.log(`%c${String.raw`
 
 Promise.resolve().then(console.log(`
 %c== INFO ==
- | ApliNi: aplini@ipacel.cc
+ | Author: [ ApliNi, MickyDot ]
  | Code: https://github.com/ApliNi/cat.ipacel.cc
 `, 'color: #FF8C00'));

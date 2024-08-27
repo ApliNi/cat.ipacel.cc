@@ -16,6 +16,7 @@
 			background-color: #1B1B1B;
 			height: 100vh;
 			margin: 0;
+			user-select: none;
 		}
 
 		img {
@@ -23,7 +24,7 @@
 			height: fit-content;
 			position: absolute;
 			-webkit-user-drag: none;
-			transition: transform 0.4s ease, top 0.2s ease, left 0.2s ease;
+			transition: transform 0.4s ease, top 0.4s ease, left 0.4s ease;
 
 			opacity: 0;
 
@@ -67,31 +68,11 @@
 			document.addEventListener('mousemove', onMouseMove);
 		});
 
-
-		let scale = 1;
-		document.body.onwheel = (event) => {
-
-			// (Abs(滚轮步进距离 / 1000), 限制不小于 0.01, 不大于 0.2. 乘 Abs(当前缩放比例)), 不小于 0.01
-			const step = Math.max(Math.min(Math.max(Math.abs(event.deltaY / 1000), 0.01), 0.2) * Math.abs(scale), 0.01);
-
-			if(step === 0.01){
-				// 可能是通过触摸板进行缩放, 调低过度动画时间
-				img.style.transition = `transform 0.25s ease`;
-			}else{
-				img.style.transition = `transform 0.4s ease`;
-			}
-
-			scale += (event.deltaY < 0)? step : -step;
-
-			// 小数位数太多造成抖动
-			img.style.transform = `scale(${scale.toFixed(4)})`;
-		};
-
 		const onResize = () => {
 			const x = (window.innerWidth - img.offsetWidth) / 2;
 			const y = (window.innerHeight - img.offsetHeight) / 2;
 
-			img.style.transition = `transform 0.4s ease, top 0.2s ease, left 0.2s ease`;
+			img.style.transition = `transform 0.4s ease, top 0.4s ease, left 0.4s ease`;
 
 			img.style.left = `${x}px`;
 			img.style.top = `${y}px`;
@@ -102,6 +83,36 @@
 			onResize();
 			img.style.opacity = 1;
 		});
+
+		// 如果元素 (即将) 超出视口, 则重置位置
+		const runAway = async () => {
+			const rect = img.getBoundingClientRect();
+			const stat = rect.left > (window.innerWidth - window.innerWidth * 0.07) || rect.right < window.innerWidth * 0.07 || rect.top > (window.innerHeight - window.innerHeight * 0.07) || rect.bottom < window.innerHeight * 0.07;
+			if(stat){
+				onResize();
+			}
+		};
+
+		let scale = 1;
+		document.body.onwheel = (event) => {
+
+			// (Abs(滚轮步进距离 / 1000), 限制不小于 0.01, 不大于 0.2. 乘 Abs(当前缩放比例)), 不小于 0.01
+			const step = Math.max(Math.min(Math.max(Math.abs(event.deltaY / 1000), 0.01), 0.2) * Math.abs(scale), 0.01);
+
+			if(step === 0.01){
+				// 可能是通过触摸板进行缩放, 调低过度动画时间
+				img.style.transition = `transform 0.25s ease, top 0.4s ease, left 0.4s ease`;
+			}else{
+				img.style.transition = `transform 0.4s ease, top 0.4s ease, left 0.4s ease`;
+			}
+
+			scale += (event.deltaY < 0)? step : -step;
+
+			// 小数位数太多造成抖动
+			img.style.transform = `scale(${scale.toFixed(4)})`;
+
+			runAway();
+		};
 
 		img.addEventListener('mousedown', (event) => {
 			const startMouseX = event.clientX;
@@ -123,12 +134,7 @@
 				document.removeEventListener('mousemove', onMouseMove);
 				document.removeEventListener('mouseup', onMouseUp);
 
-				// 如果元素 (即将) 超出视口, 则重置位置
-				const rect = img.getBoundingClientRect();
-				const stat = rect.left > (window.innerWidth - window.innerWidth * 0.07) || rect.right < window.innerWidth * 0.07 || rect.top > (window.innerHeight - window.innerHeight * 0.07) || rect.bottom < window.innerHeight * 0.07;
-				if(stat){
-					onResize();
-				}
+				runAway();
 			};
 
 			document.addEventListener('mousemove', onMouseMove);

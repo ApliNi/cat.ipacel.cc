@@ -19,7 +19,7 @@
 	<link rel="manifest" href="./manifest.webmanifest?v=3.10">
 
 	<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css?v=1.101">
-	<link rel="stylesheet" href="./ui.css?v=24.55">
+	<link rel="stylesheet" href="./ui.css?v=24.60">
 	<link rel="stylesheet" href="./l2/highlight.css?v=2">
 	<link rel="stylesheet" href="./l2/katex/katex.min.css?v=0.16.11">
 
@@ -29,8 +29,9 @@
 	<script src="./l2/katex/katex.min.js?v=0.16.11" defer></script>
 
 	<script type="module" defer>
-		import { lib } from './main.js?v=12.22.49';
+		import { lib, stat } from './main.js?v=12.22.68';
 		window.lib = lib;
+		window.stat = stat;
 	</script>
 
 	<link rel="preload" href="./l2/marked-extended-latex.js" as="script" crossorigin="anonymous">
@@ -83,7 +84,7 @@
 			<p class="describe center">// 当前测试版本不代表最终效果 //</p>
 
 			<div class="box inputBox">
-				<div id="mainMsgInp" contenteditable="plaintext-only" placeholder=" (｡・̀ᴗ-)✧ "></div>
+				<div id="mainMsgInp" contenteditable="true" placeholder=" (｡・̀ᴗ-)✧ "></div>
 				<button id="mainSendBtn" class="btn send --ban" title="发送消息">√</button>
 				<button id="mainToolBtn" class="btn tool" title="工具">T</button>
 				<div id="mainToolBox" class="--quit">
