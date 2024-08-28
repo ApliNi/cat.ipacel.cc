@@ -11,6 +11,28 @@ body {
 	overflow-y: hidden;
 	overflow-x: hidden;
 	scroll-behavior: smooth;
+
+	.dragover {
+		--l: 72px;
+		border: #5dccff66 solid 10px;
+		width: 100%;
+		height: 100vh;
+		position: fixed;
+		mask: conic-gradient(at var(--l) var(--l), #00000000 0% 75%, #000 75% 100%) 0 0 / calc(100% - var(--l)) calc(100% - var(--l));
+		-webkit-mask: conic-gradient(at var(--l) var(--l), #00000000 0% 75%, #000 75% 100%) 0 0 / calc(100% - var(--l)) calc(100% - var(--l));
+		z-index: 10;
+		pointer-events: none;
+		transform: scale(1.05);
+		transition: all 0.4s ease;
+		opacity: 0;
+	}
+
+	&.--fileDragover {
+		.dragover {
+			transform: scale(0.95);
+			opacity: 1;
+		}
+	}
 }
 
 .container {
@@ -77,10 +99,13 @@ body {
 			font-size: 0.875rem;
 			outline: 0;
 			cursor: url('https://ipacel.cc/dav/command_3.png'), default;
+			user-select: text;
+			-webkit-user-select: text;
 
 			&:empty::before{
 				content: attr(placeholder);
 				color: var(--t);
+				padding: 0 7px;
 			}
 
 			img {
@@ -120,7 +145,7 @@ body {
 
 		#mainToolBox {
 
-			padding: 0 92px 14px 20px;
+			padding: 0 90px 14px 20px;
 			position: absolute;
 			bottom: 0;
 			width: 100%;
@@ -132,6 +157,11 @@ body {
 				pointer-events: auto;
 				position: unset;
 				color: var(--a1);
+				margin-left: 10px;
+
+				&.upload {
+					font-size: 1rem;
+				}
 			}
 
 			opacity: 1;
@@ -653,6 +683,9 @@ p, pre, h1, h2, h3, h4, h5, h6 {
 	}
 }
 
+#mainFileInp {
+	display: none;
+}
 
 dialog {
 	width: 100%;

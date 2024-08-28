@@ -19,7 +19,7 @@
 	<link rel="manifest" href="./manifest.webmanifest?v=3.10">
 
 	<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css?v=1.101">
-	<link rel="stylesheet" href="./ui.css?v=25.3">
+	<link rel="stylesheet" href="./ui.css?v=25.6">
 	<link rel="stylesheet" href="./l2/highlight.css?v=2">
 	<link rel="stylesheet" href="./l2/katex/katex.min.css?v=0.16.11">
 
@@ -29,7 +29,7 @@
 	<script src="./l2/katex/katex.min.js?v=0.16.11" defer></script>
 
 	<script type="module" defer>
-		import { lib, stat } from './main.js?v=25.3';
+		import { lib, stat } from './main.js?v=25.6';
 		window.lib = lib;
 		window.stat = stat;
 	</script>
@@ -57,7 +57,7 @@
 	</script>
 	<script src="./l2/webfontloader.js" defer></script>
 </head>
-<body>
+<body class="">
 
 	<dialog id="dog">
 
@@ -73,6 +73,10 @@
 
 	</dialog>
 
+	<div class="dragover"></div>
+
+	<input id="mainFileInp" type="file" accept="image/*" />
+
 	<button id="toTopBtn" class="btn toTop" onclick="lib.toTop()" title="回到顶部">^</button>
 
 	<div id="container" class="container">
@@ -84,11 +88,12 @@
 			<p class="describe center">// 当前测试版本不代表最终效果 //</p>
 
 			<div class="box inputBox">
-				<div id="mainMsgInp" contenteditable="true" placeholder=" (｡・̀ᴗ-)✧ "></div>
+				<div id="mainMsgInp" contenteditable="true" placeholder="(｡・̀ᴗ-)✧"></div>
 				<button id="mainSendBtn" class="btn send --ban" title="发送消息">√</button>
 				<button id="mainToolBtn" class="btn tool" title="工具">T</button>
 				<div id="mainToolBox" class="--quit">
 					<button class="btn" onclick="lib.clearMsg()" title="清空">=</button>
+					<button class="btn upload" onclick="lib.btnUpload()" title="上传">+</button>
 				</div>
 			</div>
 

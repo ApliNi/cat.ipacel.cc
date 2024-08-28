@@ -39,6 +39,7 @@ const dom = {
 	mainToolBtn: document.querySelector('#mainToolBtn'),
 	mainToolBox: document.querySelector('#mainToolBox'),
 	mainMsgInp: document.querySelector('#mainMsgInp'),
+	mainFileInp: document.querySelector('#mainFileInp'),
 	inpFileBox: document.querySelector('#inpFileBox'),
 	msgList: document.querySelector('#msgList'),
 
@@ -549,6 +550,10 @@ export const lib = {
 		}, time);
 	},
 
+	btnUpload: () => {
+		dom.mainFileInp.click();
+	},
+
 	getCaretPos: (el) => {
 		const range = window.getSelection().getRangeAt(0);
 		const rangeClone = range.cloneRange();
@@ -598,38 +603,100 @@ export const lib = {
 
 };
 
-dom.mainMsgInp.addEventListener('keydown', (event) => {
-	
-	// 自己实现了撤销和重做 :(
-	if(event.ctrlKey){
-		if(event.key === 'z'){
-			event.preventDefault();
-			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx > 0 ? stat.mainMsgInp.stackIdx - 1 : 0;
-			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
-			dom.mainMsgInp.textContent = text;
-			lib.setCaretPos(dom.mainMsgInp, pos);
-			lib.syncMainInpStat();
-		}else if(event.key === 'y'){
-			event.preventDefault();
-			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx < stat.mainMsgInp.stack.length - 1 ? stat.mainMsgInp.stackIdx + 1 : stat.mainMsgInp.stack.length - 1;
-			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
-			dom.mainMsgInp.textContent = text;
-			lib.setCaretPos(dom.mainMsgInp, pos);
-			lib.syncMainInpStat();
+const onFile = {
+
+	image: async (base64) => {
+			
+		// 达到图片上传数量限制
+		const imgList = Array.from(dom.inpFileBox.querySelectorAll('img.file'));
+		if(imgList.length >= config.maxImgCount){
+			return;
 		}
-		return;
-	}
-	
-	if(event.key === 'Enter'){
-		if(!event.shiftKey){
-			// 如果文本中已经存在至少一个换行, 则不发送消息
-			if(!/\n/.test(dom.mainMsgInp.textContent)){
-				event.preventDefault();
-				dom.mainSendBtn.click();
+
+		const fileType = base64.split(';')[0].split('/')[1];
+		if(!/^(png|jpg|jpeg)$/i.test(fileType)){
+
+			try{
+				const img = new Image();
+				await new Promise((resolve) => {
+					img.src = base64;
+					img.onload = resolve;
+				});
+				const canvas = document.createElement('canvas');
+				canvas.width = img.width;
+				canvas.height = img.height;
+				canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+				base64 = canvas.toDataURL('image/png');
+			}catch(err){
+				const dialog = createDialog('ui');
+				addMsg(dialog, 'ai', `<p>[/] 图像解析失败啦</p>`, true);
+				return;
 			}
 		}
-	}
-});
+
+		if(base64.length > config.maxImgBase64Length){
+
+			let zoom = 1;
+			
+			while(true){
+
+				try{
+					const img = new Image();
+					await new Promise((resolve) => {
+						img.src = base64;
+						img.onload = resolve;
+					});
+					const canvas = document.createElement('canvas');
+					canvas.width = img.width * zoom;
+					canvas.height = img.height * zoom;
+					canvas.getContext('2d').drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
+					base64 = canvas.toDataURL('image/jpeg');
+				}catch(err){
+					const dialog = createDialog('ui');
+					addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
+					return;
+				}
+
+				console.log('[图像压缩]', zoom, base64.length / 1024 / 1024);
+
+				if(base64.length > config.maxImgBase64Length){
+					zoom -= 0.3;
+					if(zoom <= 0){
+						addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
+						return;
+					}
+				}else{
+					break;
+				}
+			}
+		}
+
+		// 内容和已有图片相同
+		if(imgList.some((img) => base64 === img.src)){
+			const dialog = createDialog('ui');
+			addMsg(dialog, 'ai', `<p>[/] 这张图片已经存在了哦</p>`, true);
+			return;
+		};
+
+		const img = document.createElement('img');
+		img.setAttribute('class', 'file');
+		img.src = base64;
+		img.onclick = () => {
+			lib.openImg(img);
+		};
+		
+		const div = document.createElement('div');
+		div.setAttribute('class', 'li');
+		div.appendChild(img);
+
+		requestAnimationFrame(() => {
+			dom.inpFileBox.appendChild(div);
+			requestAnimationFrame(() => {
+				div.classList.add('--join');
+			});
+		});
+	},
+};
 
 dom.mainMsgInp.addEventListener('paste', (event) => {
 
@@ -638,101 +705,10 @@ dom.mainMsgInp.addEventListener('paste', (event) => {
 	for(const item of event.clipboardData.items){
 		
 		if(item.type.startsWith('image')){
-			
-			// 达到图片上传数量限制
-			const imgList = Array.from(dom.inpFileBox.querySelectorAll('img.file'));
-			if(imgList.length >= config.maxImgCount){
-				return;
-			}
 
 			const reader = new FileReader();
-			reader.onload = async (event) => {
-
-				let base64 = event.target.result;
-
-				const fileType = base64.split(';')[0].split('/')[1];
-				if(!/^(png|jpg|jpeg)$/i.test(fileType)){
-
-					try{
-						const img = new Image();
-						await new Promise((resolve) => {
-							img.src = base64;
-							img.onload = resolve;
-						});
-						const canvas = document.createElement('canvas');
-						canvas.width = img.width;
-						canvas.height = img.height;
-						canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
-						base64 = canvas.toDataURL('image/png');
-					}catch(err){
-						const dialog = createDialog('ui');
-						addMsg(dialog, 'ai', `<p>[/] 图像解析失败啦</p>`, true);
-						return;
-					}
-				}
-
-				if(base64.length > config.maxImgBase64Length){
-
-					let zoom = 1;
-					
-					while(true){
-
-						try{
-							const img = new Image();
-							await new Promise((resolve) => {
-								img.src = base64;
-								img.onload = resolve;
-							});
-							const canvas = document.createElement('canvas');
-							canvas.width = img.width * zoom;
-							canvas.height = img.height * zoom;
-							canvas.getContext('2d').drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
-							base64 = canvas.toDataURL('image/jpeg');
-						}catch(err){
-							const dialog = createDialog('ui');
-							addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
-							return;
-						}
-
-						console.log('[图像压缩]', zoom, base64.length / 1024 / 1024);
-
-						if(base64.length > config.maxImgBase64Length){
-							zoom -= 0.3;
-							if(zoom <= 0){
-								addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
-								return;
-							}
-						}else{
-							break;
-						}
-					}
-				}
-
-				// 内容和已有图片相同
-				if(imgList.some((img) => base64 === img.src)){
-					const dialog = createDialog('ui');
-					addMsg(dialog, 'ai', `<p>[/] 这张图片已经存在了哦</p>`, true);
-					return;
-				};
-
-				const img = document.createElement('img');
-				img.setAttribute('class', 'file');
-				img.src = base64;
-				img.onclick = () => {
-					lib.openImg(img);
-				};
-				
-				const div = document.createElement('div');
-				div.setAttribute('class', 'li');
-				div.appendChild(img);
-
-				requestAnimationFrame(() => {
-					dom.inpFileBox.appendChild(div);
-					requestAnimationFrame(() => {
-						div.classList.add('--join');
-					});
-				});
-				
+			reader.onload = (event) => {
+				onFile.image(event.target.result);
 			};
 			reader.readAsDataURL(item.getAsFile());
 		}
@@ -766,6 +742,82 @@ dom.mainMsgInp.addEventListener('paste', (event) => {
 				// 触发输入事件
 				dom.mainMsgInp.dispatchEvent(new Event('input'));
 			});
+		}
+	}
+});
+
+dom.mainFileInp.addEventListener('change', async (event) => {
+	const fileList = event.target.files;
+
+	// html 输入框已经限定了文件格式
+	
+	for(const file of fileList){
+		const reader = new FileReader();
+		reader.onload = (event) => {
+			onFile.image(event.target.result);
+		};
+		reader.readAsDataURL(file);
+	}
+
+	dom.mainFileInp.value = '';
+});
+
+// 拖拽进入区域时，高亮显示
+document.body.addEventListener('dragover', async (event) => {
+	event.preventDefault();
+	document.body.classList.add('--fileDragover');
+});
+
+// 拖拽离开区域时，取消高亮
+document.body.addEventListener('dragleave', async (event) => {
+	document.body.classList.remove('--fileDragover');
+});
+
+// 文件被放置到区域时，处理文件
+document.body.addEventListener('drop', async (event) => {
+	event.preventDefault();
+	document.body.classList.remove('--fileDragover');
+	const files = event.dataTransfer.files;
+	for(const file of files){
+		if(/^image\//i.test(file.type)){
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				onFile.image(event.target.result);
+			};
+			reader.readAsDataURL(file);
+		}
+	}
+});
+
+dom.mainMsgInp.addEventListener('keydown', (event) => {
+	
+	// 自己实现了撤销和重做 :(
+	if(event.ctrlKey){
+		if(event.key === 'z'){
+			event.preventDefault();
+			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx > 0 ? stat.mainMsgInp.stackIdx - 1 : 0;
+			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
+			dom.mainMsgInp.textContent = text;
+			lib.setCaretPos(dom.mainMsgInp, pos);
+			lib.syncMainInpStat();
+		}else if(event.key === 'y'){
+			event.preventDefault();
+			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx < stat.mainMsgInp.stack.length - 1 ? stat.mainMsgInp.stackIdx + 1 : stat.mainMsgInp.stack.length - 1;
+			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
+			dom.mainMsgInp.textContent = text;
+			lib.setCaretPos(dom.mainMsgInp, pos);
+			lib.syncMainInpStat();
+		}
+		return;
+	}
+	
+	if(event.key === 'Enter'){
+		if(!event.shiftKey){
+			// 如果文本中已经存在至少一个换行, 则不发送消息
+			if(!/\n/.test(dom.mainMsgInp.textContent)){
+				event.preventDefault();
+				dom.mainSendBtn.click();
+			}
 		}
 	}
 });
