@@ -216,6 +216,7 @@ body {
 				height: 64px;
 				border-radius: 7px;
 				object-fit: cover;
+				pointer-events: auto;
 			}
 		}
 	}

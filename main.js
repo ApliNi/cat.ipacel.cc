@@ -492,10 +492,29 @@ export const lib = {
 	},
 
 	openImg: (img) => {
-		const src = img.getAttribute('src');
-		const alt = img.getAttribute('alt');
-		const width = img.naturalWidth;
-		const height = img.naturalHeight;
+		let src = img.src;
+
+		// 检查 Base64 图片
+		if(/^data:image\/[^;]{1,10};base64,/i.test(src)){
+			const fileType = src.split(';')[0].split('/')[1];
+			const base64 = src.replace(/data:([^;]*);base64,/, '');
+			const byteCharacters = atob(base64);
+
+			// 创建一个 8 位的数组, 长度等于解码后的字符串长度
+			const byteNumbers = new Array(byteCharacters.length);
+			for(let i = 0; i < byteCharacters.length; i++){
+				byteNumbers[i] = byteCharacters.charCodeAt(i);
+			}
+			// 将8位的数组转换为Blob对象
+			const byteArray = new Uint8Array(byteNumbers);
+			const blob = new Blob([byteArray], {type: fileType});
+		
+			// 获取本地 URL
+			src = URL.createObjectURL(blob);
+		}
+
+		const width = Math.max(img.naturalWidth, 370);
+		const height = Math.max(img.naturalHeight, 310);
 
 		const maxWidth = screen.width * 0.6;
 		const maxHeight = screen.height * 0.6;
@@ -511,10 +530,6 @@ export const lib = {
 		}
 		setWidth = Math.min(setWidth, width);
 		setHeight = Math.min(setHeight, height);
-
-		if(setWidth === 0 || setWidth === 0){
-			return;
-		}
 
 		const left = (screen.width - setWidth) / 2;
 		const top = (screen.height - setHeight) / 2;
@@ -703,6 +718,9 @@ dom.mainMsgInp.addEventListener('paste', (event) => {
 				const img = document.createElement('img');
 				img.setAttribute('class', 'file');
 				img.src = base64;
+				img.onclick = () => {
+					lib.openImg(img);
+				};
 				
 				const div = document.createElement('div');
 				div.setAttribute('class', 'li');
