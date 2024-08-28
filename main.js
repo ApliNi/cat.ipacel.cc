@@ -4,8 +4,6 @@ export const stat = {
 	login: false,
 	connect: false,
 
-	mainMsgInp_125402: false,
-
 	scroll: false,
 
 	mainMsgInp: {
@@ -26,7 +24,9 @@ export const stat = {
 
 const config = {
 	reconnect: true,
-	mainMsgInpMaxLength: 3972,
+	maxMsgInpLength: 3072,
+	maxImgCount: 3,
+	maxImgBase64Length: 5 * 1024 * 1024,
 	saveMsgLength: 256,
 	// .msg 外边距
 	liMsgHeightOffset: 25,
@@ -39,6 +39,7 @@ const dom = {
 	mainToolBtn: document.querySelector('#mainToolBtn'),
 	mainToolBox: document.querySelector('#mainToolBox'),
 	mainMsgInp: document.querySelector('#mainMsgInp'),
+	inpFileBox: document.querySelector('#inpFileBox'),
 	msgList: document.querySelector('#msgList'),
 
 	loginBody: document.querySelector('#loginBody'),
@@ -81,12 +82,36 @@ const _runWebSocket = async () => {
 	socket.addEventListener('message', async (event) => {
 		const msg = JSON.parse(event.data);
 		// console.log(`[ws] MSG: ${msg.type}`, msg);
+
+		await msgListener.on(msg);
 		
 		if(fn[msg.type]){
 			await fn[msg.type](msg);
 		}
 	
 	});
+};
+
+const msgListener = {
+	_id: 0,
+	_list: {},
+	add: (fn, ready = () => {}) => new Promise((resolve, reject) => {
+		const cb = (data) => {
+			resolve(data);
+		};
+		msgListener._list[++msgListener._id] = {
+			fn, cb
+		};
+		ready();
+	}),
+	on: async (inpData) => {
+		for(const id in msgListener._list){
+			const cbData = await msgListener._list[id].fn(inpData);
+			if(cbData !== false){
+				await msgListener._list[id].cb(cbData);
+			}
+		}
+	},
 };
 
 const fn = {
@@ -595,37 +620,141 @@ dom.mainMsgInp.addEventListener('paste', (event) => {
 
 	event.preventDefault();
 
-	// 如果有选中文本
-	const range = window.getSelection().getRangeAt(0);
-	const startOffset = range.startOffset;
-	const endOffset = range.endOffset;
-	if(startOffset < endOffset){
-		// 删除选中文本
-		const newText = dom.mainMsgInp.textContent.slice(0, startOffset) + dom.mainMsgInp.textContent.slice(endOffset);
-		dom.mainMsgInp.textContent = newText;
-		lib.setCaretPos(dom.mainMsgInp, startOffset);
-	}
-
-	let text = event.clipboardData.getData('text');
-	const maxLength = dom.mainMsgInp.textContent.length + text.length;
-
-	text = text.slice(0, config.mainMsgInpMaxLength - maxLength);
+	for(const item of event.clipboardData.items){
 		
-	// 插入到当前光标处
-	const pos = lib.getCaretPos(dom.mainMsgInp);
-	const newText = dom.mainMsgInp.textContent.slice(0, pos) + text + dom.mainMsgInp.textContent.slice(pos);
-	
-	dom.mainMsgInp.textContent = newText;
-	// 将光标移动到插入之后的位置
-	lib.setCaretPos(dom.mainMsgInp, pos + text.length);
+		if(item.type.startsWith('image')){
+			
+			// 达到图片上传数量限制
+			const imgList = Array.from(dom.inpFileBox.querySelectorAll('img.file'));
+			if(imgList.length >= config.maxImgCount){
+				return;
+			}
 
-	// 触发输入事件
-	dom.mainMsgInp.dispatchEvent(new Event('input'));
+			const reader = new FileReader();
+			reader.onload = async (event) => {
+
+				let base64 = event.target.result;
+
+				const fileType = base64.split(';')[0].split('/')[1];
+				if(!/^(png|jpg|jpeg)$/i.test(fileType)){
+
+					try{
+						const img = new Image();
+						await new Promise((resolve) => {
+							img.src = base64;
+							img.onload = resolve;
+						});
+						const canvas = document.createElement('canvas');
+						canvas.width = img.width;
+						canvas.height = img.height;
+						canvas.getContext('2d').drawImage(img, 0, 0, img.width, img.height);
+						base64 = canvas.toDataURL('image/png');
+					}catch(err){
+						const dialog = createDialog('ui');
+						addMsg(dialog, 'ai', `<p>[/] 图像解析失败啦</p>`, true);
+						return;
+					}
+				}
+
+				if(base64.length > config.maxImgBase64Length){
+
+					let zoom = 1;
+					
+					while(true){
+
+						try{
+							const img = new Image();
+							await new Promise((resolve) => {
+								img.src = base64;
+								img.onload = resolve;
+							});
+							const canvas = document.createElement('canvas');
+							canvas.width = img.width * zoom;
+							canvas.height = img.height * zoom;
+							canvas.getContext('2d').drawImage(img, 0, 0, img.width * zoom, img.height * zoom);
+							base64 = canvas.toDataURL('image/jpeg');
+						}catch(err){
+							const dialog = createDialog('ui');
+							addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
+							return;
+						}
+
+						console.log('[图像压缩]', zoom, base64.length / 1024 / 1024);
+
+						if(base64.length > config.maxImgBase64Length){
+							zoom -= 0.3;
+							if(zoom <= 0){
+								addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
+								return;
+							}
+						}else{
+							break;
+						}
+					}
+				}
+
+				// 内容和已有图片相同
+				if(imgList.some((img) => base64 === img.src)){
+					const dialog = createDialog('ui');
+					addMsg(dialog, 'ai', `<p>[/] 这张图片已经存在了哦</p>`, true);
+					return;
+				};
+
+				const img = document.createElement('img');
+				img.setAttribute('class', 'file');
+				img.src = base64;
+				
+				const div = document.createElement('div');
+				div.setAttribute('class', 'li');
+				div.appendChild(img);
+
+				requestAnimationFrame(() => {
+					dom.inpFileBox.appendChild(div);
+					requestAnimationFrame(() => {
+						div.classList.add('--join');
+					});
+				});
+				
+			};
+			reader.readAsDataURL(item.getAsFile());
+		}
+
+		else if(item.type === 'text/plain'){
+			item.getAsString((text) => {
+
+				// 如果有选中文本
+				const range = window.getSelection().getRangeAt(0);
+				const startOffset = range.startOffset;
+				const endOffset = range.endOffset;
+				if(startOffset < endOffset){
+					// 删除选中文本
+					const newText = dom.mainMsgInp.textContent.slice(0, startOffset) + dom.mainMsgInp.textContent.slice(endOffset);
+					dom.mainMsgInp.textContent = newText;
+					lib.setCaretPos(dom.mainMsgInp, startOffset);
+				}
+
+				const maxLength = dom.mainMsgInp.textContent.length + text.length;
+			
+				text = maxLength > config.maxMsgInpLength ? text.slice(0, config.maxMsgInpLength - maxLength) : text;
+					
+				// 插入到当前光标处
+				const pos = lib.getCaretPos(dom.mainMsgInp);
+				const newText = dom.mainMsgInp.textContent.slice(0, pos) + text + dom.mainMsgInp.textContent.slice(pos);
+				
+				dom.mainMsgInp.textContent = newText;
+				// 将光标移动到插入之后的位置
+				lib.setCaretPos(dom.mainMsgInp, pos + text.length);
+			
+				// 触发输入事件
+				dom.mainMsgInp.dispatchEvent(new Event('input'));
+			});
+		}
+	}
 });
 
 dom.mainMsgInp.addEventListener('input', (event) => {
 
-	if(dom.mainMsgInp.textContent.length > config.mainMsgInpMaxLength){
+	if(dom.mainMsgInp.textContent.length > config.maxMsgInpLength){
 		dom.mainMsgInp.textContent = stat.mainMsgInp.text;
 		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
 	}else{
@@ -645,11 +774,10 @@ dom.mainMsgInp.addEventListener('input', (event) => {
 				text: stat.mainMsgInp.text,
 				pos: stat.mainMsgInp.pos,
 			});
-			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stack.length - 1;
-	
 			if(stat.mainMsgInp.stack.length > 256){
 				stat.mainMsgInp.stack.shift();
 			}
+			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stack.length - 1;
 		}
 	}
 });
@@ -660,6 +788,15 @@ dom.mainMsgInp.addEventListener('click', () => {
 	lib.syncMainInpStat();
 });
 
+dom.inpFileBox.addEventListener('click', (event) => {
+	const target = event.target;
+	if(target.classList.contains('li')){
+		target.classList.remove('--join');
+		setTimeout(() => {
+			target.remove();
+		}, 220);
+	}
+});
 
 
 dom.mainSendBtn.addEventListener('click', async () => {
@@ -668,24 +805,76 @@ dom.mainSendBtn.addEventListener('click', async () => {
 		return;
 	}
 
+	const time = Date.now();
+	const dialog = createDialog(time);
+
+	// 收集用户输入
 	const uiUserMsgPlugins = [];
 
-	const inpText = dom.mainMsgInp.textContent.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
-	if(inpText){
-		lib.clearMainInpStat();
-		lib.syncMainInpStat();
-		uiUserMsgPlugins.push({ type: 'text', data: { text: inpText }});
+	const getUserInp = async () => {
+		// 处理输入框
+		if(true){
+			const inpText = dom.mainMsgInp.textContent.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
+			if(inpText){
+				lib.clearMainInpStat();
+				lib.syncMainInpStat();
+				uiUserMsgPlugins.push({ type: 'text', data: { text: inpText }});
+			}else{
+				return;
+			}
+		}
+
+		// 处理图片上传
+		if(true){
+			const temp = [];
+
+			for(const fileDom of Array.from(dom.inpFileBox.querySelectorAll('.file'))){
+				if(fileDom.nodeName === 'IMG'){
+					temp.push(fileDom.src);
+					// uiUserMsgPlugins.push({ type: 'image', data: { file: fileDom.src }});
+					fileDom.parentNode.click();	// 从页面移除这个图片
+				}
+			}
+
+			if(temp.length !== 0){
+				addMsg(dialog, 'user loading');
+			}
+
+			const upFileList = await msgListener.add((msg) => {
+				if(msg.type === '// UPLOAD IMAGE BASE64 //'){
+					return msg.list;
+				}
+				return false;
+			}, () => {
+				socket.send(`// UPLOAD IMAGE BASE64 //\n${temp.join('\n')}`);
+			});
+
+			for(const li of upFileList){
+				uiUserMsgPlugins.push({ type: 'image', data: { file: li.url, fileId: li.fileId }});
+			}
+		}
+
+		if(uiUserMsgPlugins.length === 0){
+			return;
+		}
+
+		return true;
 	}
 
-	if(uiUserMsgPlugins.length === 0){
+	const getUserInpStat = await getUserInp();
+
+	const loadingDom = dialog.querySelector('.user.loading');
+	if(loadingDom){
+		delMsg(dialog, loadingDom);
+	}
+
+	if(getUserInpStat !== true){
+		dialog.remove();
 		return;
 	}
 	
-	const time = Date.now();
-	
-	const dialog = createDialog(time);
 	addMsg(dialog, 'user', renderPluginsMsg(uiUserMsgPlugins, dialog));
-	addMsg(dialog, 'loading');
+	addMsg(dialog, 'ai loading');
 
 	lib.saveMsg('user', uiUserMsgPlugins);
 	
@@ -745,10 +934,6 @@ Promise.resolve().then(async () => {
 	setInterval(() => {
 		lib.syncMainInpStat();
 	}, 300);
-
-	window.addEventListener('beforeunload', (event) => {
-		lib.syncMainInpStat();
-	});
 
 	await lib.loadMsg(64);
 });

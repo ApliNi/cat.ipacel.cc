@@ -49,8 +49,9 @@ body {
 	.inputBox {
 		position: relative;
 		padding: 0px;
-		margin: 20px 0 37px 0;
+		margin: 20px 0 10px 0;
 		overflow: hidden;
+		z-index: 1;
 
 		&::before {
 			content: 'MarkDown ✦ LaTeX';
@@ -144,7 +145,84 @@ body {
 		}
 	}
 
+	#inpFileBox {
+
+		display: flex;
+
+		opacity: 1;
+		transform: translate(0px, 0px);
+		height: 94px;
+		&:empty {
+			opacity: 0;
+			transform: translate(0px, -72px);
+			height: 0;
+			overflow: hidden;
+		}
+
+		.li {
+			margin: 10px 14px;
+			border-radius: 7px;
+			padding: 10px;
+			user-select: none;
+			width: 84px;
+			height: 84px;
+			margin: 5px 5px;
+			border-radius: 7px;
+			background-color: #f7f7f7b1;
+			display: flex;
+			position: relative;
+			pointer-events: none;
+			box-shadow: 0 15px 35px rgb(50 50 93 / 10%), 0 5px 15px rgb(0 0 0 / 7%);
+
+			&::before {
+				content: '+';
+				width: 17px;
+				height: 17px;
+				border-radius: 100%;
+				position: absolute;
+				z-index: 1;
+				background-color: #f00;
+				color: #fff;
+				font-size: 1.2rem;
+				transform: rotate(45deg);
+				right: 5px;
+				top: 5px;
+				text-align: center;
+				line-height: 16px;
+				cursor: url(https://ipacel.cc/dav/command_2.png), default;
+				pointer-events: auto;
+				opacity: 0.72;
+				box-shadow: 0px 3px 17px 2px rgb(50 50 93 / 10%), 0 2px 5px rgb(0 0 0 / 7%);
+			}
+
+			opacity: 0;
+			transform: translate(0px, -84px);
+			margin-left: -84px;
+			&.--join {
+				opacity: 1;
+				transform: translate(0px, 0px);
+				margin: 5px 5px;
+
+				&:first-child {
+					margin-left: 0;
+				}
+				&:last-child {
+					margin-right: 0;
+				}
+			}
+
+			img {
+				width: 64px;
+				height: 64px;
+				border-radius: 7px;
+				object-fit: cover;
+			}
+		}
+	}
+
 	#msgList {
+
+		margin-top: 27px;
 		
 		padding: 32px 0 32px 0;
 
@@ -185,8 +263,6 @@ body {
 			}
 
 			&.loading {
-				background-color: #f7f7f7b1;
-				
 				&::before {
 					content: '[/]';
 					
@@ -500,6 +576,11 @@ body {
 				&.send {
 					background-color: #15559ad4;
 				}
+			}
+		}
+		#inpFileBox {
+			.li {
+				background-color: #212121d1;
 			}
 		}
 		#msgList {
