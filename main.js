@@ -20,6 +20,8 @@ export const stat = {
 	},
 
 	clearMsg: false,
+
+	copyEl: null,
 };
 
 const config = {
@@ -36,8 +38,8 @@ const config = {
 
 const dom = {
 	mainSendBtn: document.querySelector('#mainSendBtn'),
+	mainBtnBox: document.querySelector('#mainBtnBox'),
 	mainToolBtn: document.querySelector('#mainToolBtn'),
-	mainToolBox: document.querySelector('#mainToolBox'),
 	mainMsgInp: document.querySelector('#mainMsgInp'),
 	mainFileInp: document.querySelector('#mainFileInp'),
 	inpFileBox: document.querySelector('#inpFileBox'),
@@ -175,7 +177,14 @@ const fn = {
 };
 
 marked.use(markedExtendedLatex({
-	render: (formula, displayMode) => katex.renderToString(formula, { displayMode }),
+	render: (formula, displayMode) => {
+		let html = katex.renderToString(formula, {
+			displayMode: displayMode,
+			output: 'html',
+		});
+		html = html.replace(/<span class="katex">/, `<span class="katex" data-copy="${lib.htmlAttrEscape(formula).replace(/^\n+|\n+$/g, '')}">`);
+		return html;
+	},
 }));
 
 marked.use({
@@ -188,7 +197,7 @@ marked.use({
 		},
 		image: (token) => {
 			let { href, raw, text, title } = token;
-			return `<img src="${lib.htmlAttrEscape(href)}" alt="${lib.htmlAttrEscape(text || '没有描述')}" title="${lib.htmlAttrEscape(title)}" loading="lazy" />`;
+			return `<img src="${lib.htmlAttrEscape(href)}" alt="${lib.htmlAttrEscape(text || '')}" title="${lib.htmlAttrEscape(title)}" loading="lazy" />`;
 		},
 		code: (token) => {
 			let { lang, raw, text } = token;
@@ -227,11 +236,11 @@ const renderPluginsMsg = (plugins, dialog) => {
 				break;
 			
 			case 'image':
-				htmlList.push(`<img alt="没有描述, 网络图片" src="${lib.htmlAttrEscape(li.data.file)}" loading="lazy" onclick="lib.openImg(this)" />`);
+				htmlList.push(`<img alt="" src="${lib.htmlAttrEscape(li.data.file)}" loading="lazy" onclick="lib.openImg(this)" />`);
 				break;
 
 			case 'mface':
-				htmlList.push(`<img class="mface" alt="表情图片" src="${lib.htmlAttrEscape(li.data.file)}" />`);
+				htmlList.push(`<img class="mface" alt="表情图片" src="${lib.htmlAttrEscape(li.data.file)}" loading="lazy" />`);
 				break;
 
 			case 'at':
@@ -576,6 +585,13 @@ export const lib = {
 		}catch(err){
 			console.error(err);
 		}
+	},
+
+	select: (el) => {
+		const range = document.createRange();
+		range.selectNode(el);
+		window.getSelection().removeAllRanges();
+		window.getSelection().addRange(range);
 	},
 
 	inViewport: (el, redundancyRatio = 0.0) => {
@@ -963,12 +979,171 @@ dom.mainSendBtn.addEventListener('click', async () => {
 
 dom.mainToolBtn.addEventListener('click', async () => {
 
-	if(dom.mainToolBox.classList.contains('--quit')){
-		dom.mainToolBox.classList.remove('--quit');
+	if(dom.mainBtnBox.classList.contains('--toolJoin')){
+		dom.mainBtnBox.classList.remove('--toolJoin');
 	}else{
-		dom.mainToolBox.classList.add('--quit');
+		dom.mainBtnBox.classList.add('--toolJoin');
 	}
 
+});
+
+document.body.addEventListener('mousedown', (event) => {
+
+	// 右键点击
+	if(event.button !== 2){
+		stat.copyEl = null;
+		return;
+	}
+
+	// 不处理已经有选择的情况
+	if(window.getSelection().toString() !== ''){
+		stat.copyEl = null;
+		return;
+	}
+
+	event.preventDefault();
+
+	let el;
+
+	el = event.target.closest('img');
+	if(el){
+		stat.copyEl = el;
+		return;
+	}
+
+	el = event.target.closest('code');
+	if(el){
+		lib.select(el);
+		stat.copyEl = el;
+		return;
+	}
+
+	el = event.target.closest('table');
+	if(el){
+		lib.select(el);
+		stat.copyEl = el;
+		return;
+	}
+
+	el = event.target.closest('.katex');
+	if(el){
+		lib.select(el);
+		stat.copyEl = el;
+		return;
+	}
+
+	el = event.target.closest('.msg');
+	if(el){
+		lib.select(el);
+		stat.copyEl = el;
+		return;
+	}
+	
+	stat.copyEl = null;
+});
+
+document.addEventListener('copy', (event) => {
+
+	event.preventDefault();
+
+	// 存在 data-copy 属性
+	if(stat.copyEl){
+		if(stat.copyEl.hasAttribute('data-copy')){
+			const copyText = stat.copyEl.getAttribute('data-copy');
+			lib.copy(copyText);
+		}else{
+
+			// 按顺序遍历这个被选中的元素中的所有子元素, 单独处理存在 data-copy 的和其他元素
+			
+			const textNodeList = [];
+			const getTextNode = (el) => {
+				for(const node of el.childNodes){
+					if(node.nodeType === Node.TEXT_NODE){
+						textNodeList.push(node);
+					}else{
+						getTextNode(node);
+					}
+				}
+			};
+			getTextNode(stat.copyEl);
+
+			const textList = [];
+			const set = new Set();	// 去除已被处理的 data-copy 元素
+			
+			for(const node of textNodeList){
+
+				const dataCoptEl = node.parentNode.closest('*[data-copy]');
+				if(dataCoptEl){
+					if(set.has(dataCoptEl)){
+						continue;
+					}
+					if(dataCoptEl){
+						set.add(dataCoptEl);
+						textList.push(dataCoptEl.getAttribute('data-copy'));
+					}
+				}else{
+					textList.push(node.textContent);
+				}
+			}
+
+			lib.copy(textList.join(''));
+		}
+	}else{
+		const selection = window.getSelection();
+		const selectText = selection.toString();
+		if(selectText !== ''){
+			const range = selection.getRangeAt(0);
+			const commonAncestor = range.commonAncestorContainer;
+
+			const walker = document.createTreeWalker(commonAncestor, NodeFilter.SHOW_TEXT);
+
+			const textNodeList = [];
+			let currentNode;
+			while(currentNode = walker.nextNode()){
+				textNodeList.push(currentNode);
+			}
+			
+			const textNodeText = textNodeList.map(node => node.textContent).join('');
+
+			if(!textNodeText.includes(selectText)){
+				// 如果提取部分不包含选中部分, 则可能部分节点未被完全包含, 情况较为复杂, 暂不处理
+				// 防止选中过多的换行, 还是简单处理一下
+				lib.copy(selectText);
+				return;
+			}
+
+			// 重新处理被选中的文本节点
+			const textList = [];
+			const set = new Set();
+			for(const node of textNodeList){
+				const dataCoptEl = node.parentNode.closest('*[data-copy]');
+				if(dataCoptEl){
+					if(set.has(dataCoptEl)){
+						continue;
+					}
+					if(!selectText.includes(dataCoptEl.textContent)){
+						lib.copy(selectText);
+						return;
+					}
+					if(dataCoptEl){
+						set.add(dataCoptEl);
+						textList.push(dataCoptEl.getAttribute('data-copy'));
+					}
+				}else{
+					textList.push(node.textContent);
+				}
+			}
+			const textListJoin = textList.join('');
+			
+
+			const sliceStart = textNodeText.indexOf(selectText);
+			const sliceEnd = textListJoin.length - textNodeText.length + (sliceStart + selectText.length);
+
+			const finallyText = textListJoin.slice(sliceStart, sliceEnd);
+			
+			lib.copy(finallyText);
+		}
+	}
 });
 
 window.addEventListener('scroll', () => {

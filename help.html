@@ -1,0 +1,464 @@
+
+<!DOCTYPE html>
+<html lang="any">
+	<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<title>CiAt > HELP</title>
+
+		<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css?v=1.101">
+	</head>
+
+	<style>
+
+		body {
+			background-image: repeating-linear-gradient(135deg, #5dccff0f, #5dccff0f 4rem, transparent 0, transparent 8rem);
+		}
+
+		#screenshot {
+			max-width: 1690px;
+			margin: 0 auto;
+			padding: 12px 24px;
+		}
+
+		h2, h3 {
+			-webkit-text-stroke: 0.2px #162838;
+		}
+
+		.mainBodyBox {
+			display: flex;
+			margin: 32px 0;
+
+			& > .side {
+				h2 {
+					-webkit-text-stroke: 0.4px #162838;
+					text-align: center;
+				}
+				margin: 20px;
+				width: 20%;
+			}
+
+			& > .side2 {
+				width: 80%;
+				/* background-color: #f7f7f7; */
+				backdrop-filter: blur(24px);
+				outline: 2px dashed var(--c);
+				margin: 0 20px 0 0;
+				box-shadow: 0 15px 35px rgb(50 50 93 / 15%), 0 5px 15px rgb(0 0 0 / 7%);
+			}
+		}
+
+		.gridBox {
+			display: grid;
+			grid-template-columns: repeat(4, 25%);
+			margin: 10px;
+
+			& > div {
+				margin: 10px 10px 20px 10px;
+			}
+		}
+
+		@media (max-width: 1280px) {
+			.mainBodyBox {
+				flex-direction: column;
+				& > .side {
+					width: 100%;
+				}
+				& > .side2 {
+					width: 100%;
+				}
+			}
+			.gridBox {
+				grid-template-columns: repeat(3, 33.3333%);
+			}
+		}
+		@media (max-width: 960px) {
+			.gridBox {
+				grid-template-columns: repeat(2, 50%);
+			}
+		}
+		@media (max-width: 720px) {
+			.gridBox {
+				grid-template-columns: repeat(1, 100%);
+			}
+		}
+
+		.margin20 {
+			margin: 20px;
+		}
+
+		.cmdBox {
+
+			p {
+				margin: 10px 0;
+			}
+
+			.cmd {
+				margin-bottom: 16px;
+
+				p {
+					/* font-weight: 600; */
+					background-color: #5dccff17;
+					padding: 2px 7px;
+					margin-top: 16px;
+					position: relative;
+					box-shadow: 0 10px 20px rgb(50 50 93 / 1%), 0 5px 15px rgb(0 0 0 / 1%);
+
+					&::before {
+						font-family: 'Ubuntu_and_JetBrainsMono';
+						font-size: 11px;
+						/* font-weight: 400; */
+						position: absolute;
+						top: -14px;
+						color: #7F7F7F80;
+					}
+				}
+				.main {
+					font-size: 15px;
+					&::before {
+						content: 'COMMAND';
+					}
+				}
+				.args {
+					font-size: 13px;
+					&::before {
+						content: 'ARGS';
+					}
+				}
+				.demo {
+					font-size: 14px;
+					&::before {
+						content: 'DEMO';
+					}
+				}
+			}
+		}
+		
+	</style>
+
+	<body>
+		<div id="screenshot">
+
+			<div class="mainBodyBox">
+				<div class="side">
+					<h2>对话</h2>
+					<p>
+						CiAt 的对话功能由大语言模型和许多工具共同驱动.
+						在这里, 开发者们对 QQ 平台单独进行了适配, 期望可以达到更好的效果.
+					</p>
+
+					<p class="quote">对话在群聊中需要通过艾特触发</p>
+				</div>
+
+				<div class="side2">
+
+					<div class="gridBox">
+						<div class="cmdBox">
+							<h3>消息解析</h3>
+							<p>图像分析, 发送网络图片, 发送表情, 结束对话</p>
+						</div>
+						<div class="cmdBox">
+							<h3>网络能力</h3>
+							<p>百度百科, 萌娘百科, 聚合题库. WolframAlpha, 搜索引擎. 访问网页</p>
+						</div>
+						<div class="cmdBox">
+							<h3>工具使用</h3>
+							<p>计算器, 文本绘图</p>
+						</div>
+						<div class="cmdBox">
+							<h3>其他能力</h3>
+							<p>学习 (持久化)</p>
+						</div>
+					</div>
+
+					<div class="cmdBox margin20">
+						<h3>提示词</h3>
+						<p>
+							通过提示词, 我们可以为机器人定制专属的对话风格和标识, 以及决定机器人的行为方式...
+							但这项特殊的功能不如键值对配置那样清晰可见,
+							我们得到的结果往往受限于语言模型的理解和执行能力,
+							通常需要开发者们进行大量的测试才能达到比较好的效果.
+						</p>
+					</div>
+
+				</div>
+			</div>
+
+			<!-- <div class="mainBodyBox">
+				<div class="side">
+					<h2>事件功能</h2>
+					<p>
+						事件功能对特定符合要求的消息做出反应, 与指令类似,
+						但触发条件可以更加的丰富.
+					</p>
+				</div>
+
+				<div class="side2">
+
+					<div class="gridBox">
+						<div class="cmdBox">
+							<h2>网页渲染</h2>
+							<p>当域名与配置匹配时渲染网页图片</p>
+						</div>
+						<div></div>
+						<div></div>
+						<div></div>
+					</div>
+
+				</div>
+			</div> -->
+
+			<div class="mainBodyBox">
+				<div class="side">
+					<h2>指令</h2>
+					<p>指令通过固定的消息格式来运行功能, 它的功能明确且单一.</p>
+					<li>指令参数中的方括号 `[]` 代表这是一个可选参数, 省略时使用内置的默认值</li>
+					<li>花括号 `{}` 代表这是一个必选参数, 省略时指令无法运行</li>
+					<li>其中部分指令可以使用波浪线 `~` 进行占位以选择性的省略部分参数</li>
+
+				</div>
+
+				<div class="side2">
+
+					<div class="gridBox">
+						<div class="cmdBox">
+							<h3>网页地图</h3>
+							<div class="cmd">
+								<p class="main">地图|map</p>
+								<p class="args">[X] [Z] [World] [Zoom]</p>
+								<p class="demo">map ~ ~ world 4</p>
+							</div>
+							<p>通过 Dynmap 渲染地图, 生成图片.</p>
+							<p>配置路径: cmd.dynmapConfig</p>
+						</div>
+						<div class="cmdBox">
+							<h3>视频指标推送</h3>
+							<div class="cmd">
+								<p class="main">添加|移除|取消 推送</p>
+								<p class="args">{BVID}</p>
+								<p class="demo">添加推送 BV1Ar421p7Y6</p>
+							</div>
+							<p>每15分钟推送一次B站视频的指标信息, 关闭需要手动移除推送.</p>
+						</div>
+						<div class="cmdBox">
+							<h3>生成短网址</h3>
+							<div class="cmd">
+								<p class="main">短网址|sUrl</p>
+								<p class="args">{URL}</p>
+								<p class="demo">sUrl https://website.com/</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>LiteTech 风格茶话会</h3>
+							<div class="cmd">
+								<p class="main">茶话会</p>
+								<p class="args">[主题]</p>
+								<p class="demo">茶话会 设计</p>
+							</div>
+							<p>根据指定主题, 模仿生成 LiteTech 风格的茶话会.</p>
+						</div>
+						<div class="cmdBox">
+							<h3>钓鱼</h3>
+							<div class="cmd">
+								<p class="main">钓鱼 [赠送 $1], 收杆</p>
+								<p class="args">$1: {物品} [数量] {at}</p>
+								<p class="demo">钓鱼赠送 生鳕鱼 64 @ApliNi</p>
+							</div>
+							<p>钓鱼游戏功能, 库存持久化, 支持转移自己持有的物品</p>
+						</div>
+						<div class="cmdBox">
+							<h3>ITDog</h3>
+							<div class="cmd">
+								<p class="main">itDog</p>
+								<p class="args">ping|tcp|http [-v6] {host}</p>
+								<p class="demo">itDog http ipacel.cc</p>
+							</div>
+							<p>https://www.itdog.cn/ 是一个多地测速工具网站</p>
+						</div>
+						<div class="cmdBox">
+							<h3>图片文字识别</h3>
+							<div class="cmd">
+								<p class="main">ocr</p>
+								<p class="args">[图片], [引用图片]</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>聚合题库查询</h3>
+							<div class="cmd">
+								<p class="main">题库</p>
+								<p class="args">{问题}</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>编解码</h3>
+							<div class="cmd">
+								<p class="main">base64|url $1 $2</p>
+								<p class="args">编码|coding|解码|decoding</p>
+								<p class="args">{字符串}</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>色卡</h3>
+							<div class="cmd">
+								<p class="main">色卡|color</p>
+								<p class="args">[CSS Background]</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>Light</h3>
+							<div class="cmd">
+								<p class="main">light</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>头像表情</h3>
+							<div class="cmd">
+								<p class="main">丢|扔|啃|咬</p>
+								<p class="args">[at]</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>喜报</h3>
+							<div class="cmd">
+								<p class="main">喜报|悲报</p>
+								<p class="args">{文本}</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>鲁迅说</h3>
+							<div class="cmd">
+								<p class="main">鲁迅说</p>
+								<p class="args">[文本]</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>帮助</h3>
+							<div class="cmd">
+								<p class="main">!帮助|help</p>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+			<div class="mainBodyBox">
+				<div class="side">
+					<h2>推送</h2>
+					<p>
+						新闻等内容的推送服务, 默认关闭, 需通过配置编辑器启用.
+					</p>
+				</div>
+
+				<div class="side2">
+
+					<div class="gridBox">
+						<div class="cmdBox">
+							<h3>期刊</h3>
+							<div class="cmd">
+								<p>Nature</p>
+								<p>Science</p>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+			<div class="mainBodyBox">
+				<div class="side">
+					<h2>凭证卡片</h2>
+					<p>
+						卡片是 CiAt 发行的一种虚拟纪念品, 它可以包含具有特殊功能的"凭证".
+						激活凭证卡片可以让 CiAt 为你运行一些特定的的计划或任务.
+						不过, 也有一部分卡片不包含凭证或特殊功能, 仅作为纪念品而存在.
+					</p>
+				</div>
+
+				<div class="side2">
+
+					<div class="gridBox">
+						<div class="cmdBox">
+							<h3>查看凭证卡片</h3>
+							<div class="cmd">
+								<p class="main">卡片|凭证</p>
+								<p class="args">[页码] ["dark"]</p>
+								<p class="demo">卡片 1</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>查看统计信息</h3>
+							<div class="cmd">
+								<p class="main">卡片</p>
+								<p class="args">状态|统计 ["全局"]</p>
+								<p class="demo">卡片 状态 全局</p>
+							</div>
+						</div>
+						<div class="cmdBox">
+							<h3>获取卡片线索</h3>
+							<div class="cmd">
+								<p class="demo">卡片线索</p>
+							</div>
+							<p>消耗2至7分钟, 有一定几率获取线索. 此功能仅活动进行期间有效.</p>
+							<p>每个聊天只能同时运行一个线索收集, 因此请坐和放宽~</p>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+			<div class="mainBodyBox">
+				<div class="side">
+					<h2>调试与配置</h2>
+					<p>此部分功能在群聊中需要管理员权限.</p>
+					<p>
+						CiAt 支持为群聊添加独立的配置, 可以通过 "获取配置"
+						指令来查看默认的配置内容并进行修改. 支持 JSON5 格式.
+						开发者也推荐通过配置为群聊中的机器人定制专属的标识与能力.
+					</p>
+					<p>如果你是开发者, 那么还可以使用 `!help dev` 查看开发者工具菜单.</p>
+				</div>
+
+				<div class="side2">
+
+					<div class="gridBox">
+						<div class="cmdBox">
+							<h3>重置记忆</h3>
+							<div class="cmd">
+								<p class="main">!reset</p>
+								<p class="args">memory|study</p>
+								<p class="demo">!reset memory study</p>
+							</div>
+							<p>重置记忆和学习数据.</p>
+						</div>
+						<div class="cmdBox">
+							<h3>配置编辑器</h3>
+							<div class="cmd">
+								<p class="main">!config</p>
+							</div>
+							<p>打开配置编辑器</p>
+						</div>
+						<div class="cmdBox">
+							<h3>网页终端</h3>
+							<div class="cmd">
+								<p class="main">!web</p>
+							</div>
+							<p>使用 CiAt 的网页版本</p>
+						</div>
+						<div class="cmdBox">
+							<h3>Acknowledgments</h3>
+							<div class="cmd">
+								<p class="main">!help</p>
+								<p class="args">致谢 | 感谢</p>
+								<p class="args">Acknowledgments | Thanks</p>
+							</div>
+						</div>
+					</div>
+
+				</div>
+			</div>
+
+		</div>
+	</body>
+</html>
