@@ -9,7 +9,7 @@
 
 	<title>CiAt Loading...</title>
 	<meta name="keywords" content="CiAt, IpaCiAt, IpacEL">
-	<meta name="description" content="你好呀，我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧ 我是一名开发者，和大家一起交流和学习。如果你有任何问题或者想聊的内容，随时告诉我哦！">
+	<meta name="description" content="你好呀! 我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧. 我是一位开发者，擅长计算和提供专业知识. 很高兴能和你交流! 如果你有任何问题或需要帮助, 随时告诉我哦~">
 	
 	<link rel="icon" href="https://ipacel.cc/favicon.ico">
 	<link rel="icon" href="https://ipacel.cc/dav/icon.bg@256.png" sizes="256x256">
@@ -19,7 +19,7 @@
 	<link rel="manifest" href="./manifest.webmanifest?v=3.10">
 
 	<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css?v=1.101">
-	<link rel="stylesheet" href="./ui.css?v=25.10">
+	<link rel="stylesheet" href="./ui.css?v=25.10.4">
 	<link rel="stylesheet" href="./l2/highlight.css?v=2">
 	<link rel="stylesheet" href="./l2/katex/katex.min.css?v=0.16.11">
 
@@ -29,7 +29,7 @@
 	<script src="./l2/katex/katex.min.js?v=0.16.11" defer></script>
 
 	<script type="module" defer>
-		import { lib, stat } from './main.js?v=25.10';
+		import { lib, stat } from './main.js?v=25.10.5';
 		window.lib = lib;
 		window.stat = stat;
 	</script>
@@ -65,12 +65,6 @@
 			<div id="loginBody" class="box"></div>
 		</div>
 
-		<div class="modal loading">
-			<div class="box">
-				<p>正在加载资源</p>
-			</div>
-		</div>
-
 	</dialog>
 
 	<div class="dragover"></div>
@@ -98,7 +92,6 @@
 					<button class="btn tool upload" onclick="lib.btnUpload()" title="上传 | UPLOAD">+</button>
 					<button class="btn tool" onclick="lib.clearMsg()" title="清空 | CLEAR">=</button>
 				</div>
-				
 			</div>
 
 			<div id="inpFileBox"></div>

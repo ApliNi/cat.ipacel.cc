@@ -178,11 +178,15 @@ const fn = {
 
 marked.use(markedExtendedLatex({
 	render: (formula, displayMode) => {
+
 		let html = katex.renderToString(formula, {
 			displayMode: displayMode,
 			output: 'html',
 		});
-		html = html.replace(/<span class="katex">/, `<span class="katex" data-copy="${lib.htmlAttrEscape(formula).replace(/^\n+|\n+$/g, '')}">`);
+
+		const mark = /^<span class="katex-display">/.test(html) ? '$$' : '$';
+
+		html = html.replace(/<span class="katex">/, `<span class="katex ${mark === '$$' ? '--block' : ''}" data-copy="${lib.htmlAttrEscape(`${mark}${formula}${mark}`)}">`);
 		return html;
 	},
 }));
@@ -202,7 +206,7 @@ marked.use({
 		code: (token) => {
 			let { lang, raw, text } = token;
 			const safetyLang = lib.htmlAttrEscape(lang || '');
-			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${safetyLang} 点击复制`.trim()}">#</button><code class="hljs" data-lang="${safetyLang}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${safetyLang} 点击复制`.trim()}">#</button><code class="hljs --block" data-lang="${safetyLang}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 		codespan: (token) => {
 			let { lang, raw, text } = token;
@@ -378,9 +382,17 @@ export const lib = {
 
 			{"role":"ai","plugins":[{"type":"text","data":{"text":"这个正则表达式的作用是匹配一个特定格式的文本块，具体分析如下：\n\n1. `^`：匹配输入的开始位置。\n2. `( *)`：匹配零个或多个空格字符，并将其捕获为组 1。\n3. `(bull)`：匹配字符串 \"bull\"，并将其捕获为组 2。\n4. `[\\\\s\\\\S]+?`：匹配一个或多个任意字符（包括空白和非空白），使用非贪婪模式。\n5. `(?: ... )`：这是一个非捕获组，用于组合多个条件：\n   - `hr`：匹配字符串 \"hr\"。\n   - `def`：匹配字符串 \"def\"。\n   - `\\\\n {2,}(?! )(?!\\\\1bull )\\\\n*`：匹配两个或多个换行符，后面不能跟空格且不能跟前面捕获的空格和 \"bull\"。\n   - `|`：表示或的关系。\n   - `\\\\s*$`：匹配零个或多个空白字符，直到输入的结束位置。\n\n综上所述，这个正则表达式主要用于匹配以 \"bull\" 开头的文本块，后面可以跟随任意内容，最后以特定的方式结束。如果你有更多问题或者想深入讨论，随时告诉我哦 (｡・̀ᴗ-)✧"}}]},
 
+			{"role":"user","plugins":[{"type":"text","data":{"text":"编写一个四行四列的表格"}}]},
+
+			{"role":"ai","plugins":[{"type":"text","data":{"text":"当然可以! 这是一个四行四列的表格：\n\n| 列1 | 列2 | 列3 | 列4 |\n|-----|-----|-----|-----|\n| 行1 | 行1 | 行1 | 行1 |\n| 行2 | 行2 | 行2 | 行2 |\n| 行3 | 行3 | 行3 | 行3 |\n| 行4 | 行4 | 行4 | 行4 |\n\n这样可以吗？(｡・̀ᴗ-)✧"}}]},
+
 			{"role":"user","plugins":[{"type":"text","data":{"text":"介绍一下你自己"}}]},
 
 			{"role":"ai","plugins":[{"type":"text","data":{"text":"你好呀，我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧ 我是一名开发者，和大家一起交流和学习。如果你有任何问题或者想聊的内容，随时告诉我哦！"}}]},
+
+			{"role":"user","plugins":[{"type":"text","data":{"text":"定积分的基本定理"}}]},
+
+			{"role":"ai","plugins":[{"type":"text","data":{"text":"定积分的基本定理主要包括两个部分：第一部分是关于不定积分的微分，第二部分是关于定积分的计算。它说明了定积分与不定积分之间的关系，具体来说，如果 $F(x)$ 是 $f(x)$ 的一个不定积分，那么：\n\n$$ \\int_{a}^{b} f(x) \\, dx = F(b) - F(a) $$\n\n这让我们可以通过找到一个原函数来计算定积分哦 (｡・̀ᴗ-)✧"}}]},
 		];
 
 		let dialog = createDialog(0);
@@ -607,17 +619,30 @@ export const lib = {
 		window.scrollTo({ top: 0, behavior: 'smooth' });
 	},
 
+	getTextNodeList: (el) => {
+		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+		const textNodeList = [];
+		let currentNode;
+		while(currentNode = walker.nextNode()){
+			textNodeList.push(currentNode);
+		}
+		return textNodeList;
+	},
+
 	htmlEscape: (text) => `${text || ''}`
 		.replace(/&/g, '&amp;')
+		.replace(/\$/g, '&#36;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;')
 		.replace(/ /g, '&nbsp;')
-		.replace(/\'/g, '&#39;')
-		.replace(/\"/g, '&quot;'),
+		.replace(/`/g, '&grave;')
+		.replace(/'/g, '&apos;')
+		.replace(/"/g, '&quot;'),
 	
 	htmlAttrEscape: (text) => `${text || ''}`
 		.replace(/&/g, '&amp;')
-		.replace(/\"/g, '&quot;'),
+		.replace(/\$/g, '&#36;')
+		.replace(/"/g, '&quot;'),
 
 };
 
@@ -995,10 +1020,12 @@ document.body.addEventListener('mousedown', (event) => {
 		return;
 	}
 
-	// 不处理已经有选择的情况
+	// 不处理已经有用户手动选择的情况
 	if(window.getSelection().toString() !== ''){
-		stat.copyEl = null;
-		return;
+		if(!stat.copyEl){
+			stat.copyEl = null;
+			return;
+		}
 	}
 
 	event.preventDefault();
@@ -1055,17 +1082,7 @@ document.addEventListener('copy', (event) => {
 
 			// 按顺序遍历这个被选中的元素中的所有子元素, 单独处理存在 data-copy 的和其他元素
 			
-			const textNodeList = [];
-			const getTextNode = (el) => {
-				for(const node of el.childNodes){
-					if(node.nodeType === Node.TEXT_NODE){
-						textNodeList.push(node);
-					}else{
-						getTextNode(node);
-					}
-				}
-			};
-			getTextNode(stat.copyEl);
+			const textNodeList = lib.getTextNodeList(stat.copyEl);
 
 			const textList = [];
 			const set = new Set();	// 去除已被处理的 data-copy 元素
@@ -1080,6 +1097,10 @@ document.addEventListener('copy', (event) => {
 					if(dataCoptEl){
 						set.add(dataCoptEl);
 						textList.push(dataCoptEl.getAttribute('data-copy'));
+						// 如果这个元素是块级的, 那么需要补全它的换行符
+						if(dataCoptEl.classList.contains('--block')){
+							textList.push('\n');
+						}
 					}
 				}else{
 					textList.push(node.textContent);
@@ -1090,24 +1111,39 @@ document.addEventListener('copy', (event) => {
 		}
 	}else{
 		const selection = window.getSelection();
-		const selectText = selection.toString();
-		if(selectText !== ''){
+		// const selectText = selection.toString();
+		if(selection.toString() !== ''){
 			const range = selection.getRangeAt(0);
 			const commonAncestor = range.commonAncestorContainer;
 
-			const walker = document.createTreeWalker(commonAncestor, NodeFilter.SHOW_TEXT);
-
-			const textNodeList = [];
-			let currentNode;
-			while(currentNode = walker.nextNode()){
-				textNodeList.push(currentNode);
-			}
+			const commonAncestorTextNodeList = lib.getTextNodeList(commonAncestor);
 			
-			const textNodeText = textNodeList.map(node => node.textContent).join('');
+			// 移除起始节点和结束节点前后的部分... 自己计算出选中的文本
+			const selectTextNodeList = [];
+			const temp = {
+				start: false,
+				end: false,
+			};
+			for(const node of commonAncestorTextNodeList){
+				if(node === range.startContainer){
+					temp.start = true;
+				}
+				if(temp.start && !temp.end){
+					selectTextNodeList.push(node);
+				}
+				if(node === range.endContainer){
+					temp.end = true;
+				}
+			}
+
+			const _selectText = selectTextNodeList.map(node => node.textContent).join('');
+			const selectText = _selectText.slice(range.startOffset, _selectText.length - selectTextNodeList.at(-1).length + range.endOffset);
+			
+			const textNodeText = commonAncestorTextNodeList.map(node => node.textContent).join('');
+			
 
 			if(!textNodeText.includes(selectText)){
-				// 如果提取部分不包含选中部分, 则可能部分节点未被完全包含, 情况较为复杂, 暂不处理
-				// 防止选中过多的换行, 还是简单处理一下
+				// 如果提取部分不包含选中部分, 则可能部分节点未被完全选中, 情况较为复杂, 暂不处理
 				lib.copy(selectText);
 				return;
 			}
@@ -1115,19 +1151,25 @@ document.addEventListener('copy', (event) => {
 			// 重新处理被选中的文本节点
 			const textList = [];
 			const set = new Set();
-			for(const node of textNodeList){
+			for(const node of commonAncestorTextNodeList){
+				
 				const dataCoptEl = node.parentNode.closest('*[data-copy]');
 				if(dataCoptEl){
 					if(set.has(dataCoptEl)){
 						continue;
 					}
 					if(!selectText.includes(dataCoptEl.textContent)){
+						// 检查, 如果元素未被完全选中, 则不处理
 						lib.copy(selectText);
 						return;
 					}
 					if(dataCoptEl){
 						set.add(dataCoptEl);
 						textList.push(dataCoptEl.getAttribute('data-copy'));
+						// 如果这个元素是块级的, 那么需要补全它的换行符
+						if(dataCoptEl.classList.contains('--block')){
+							textList.push('\n');
+						}
 					}
 				}else{
 					textList.push(node.textContent);
@@ -1136,10 +1178,9 @@ document.addEventListener('copy', (event) => {
 			const textListJoin = textList.join('');
 			
 
-			const sliceStart = textNodeText.indexOf(selectText);
-			const sliceEnd = textListJoin.length - textNodeText.length + (sliceStart + selectText.length);
+			const sliceEnd = textListJoin.length - textNodeText.length + (range.startOffset + selectText.length);
 
-			const finallyText = textListJoin.slice(sliceStart, sliceEnd);
+			const finallyText = textListJoin.slice(range.startOffset, sliceEnd);
 			
 			lib.copy(finallyText);
 		}
