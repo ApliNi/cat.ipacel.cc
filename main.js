@@ -26,7 +26,7 @@ const config = {
 	reconnect: true,
 	maxMsgInpLength: 3072,
 	maxImgCount: 3,
-	maxImgBase64Length: 5 * 1024 * 1024,
+	maxImgBase64Length: 4 * 1024 * 1024,
 	saveMsgLength: 256,
 	// .msg 外边距
 	liMsgHeightOffset: 25,
@@ -63,10 +63,6 @@ const _runWebSocket = async () => {
 
 		stat.connect = true;
 	
-		setInterval(() => {
-			socket.send(JSON.stringify({ type: 'keepalive' }));
-		}, 15 * 1000);
-	
 		socket.send(JSON.stringify({ type: 'login', token: lib.token() }));
 	});
 	
@@ -92,6 +88,12 @@ const _runWebSocket = async () => {
 	
 	});
 };
+	
+setInterval(() => {
+	if(stat.connect && socket){
+		socket.send(JSON.stringify({ type: 'keepalive' }));
+	}
+}, 15 * 1000);
 
 const msgListener = {
 	_id: 0,
@@ -704,16 +706,7 @@ dom.mainMsgInp.addEventListener('paste', (event) => {
 
 	for(const item of event.clipboardData.items){
 		
-		if(item.type.startsWith('image')){
-
-			const reader = new FileReader();
-			reader.onload = (event) => {
-				onFile.image(event.target.result);
-			};
-			reader.readAsDataURL(item.getAsFile());
-		}
-
-		else if(item.type === 'text/plain'){
+		if(item.type === 'text/plain'){
 			item.getAsString((text) => {
 
 				// 如果有选中文本
@@ -742,6 +735,24 @@ dom.mainMsgInp.addEventListener('paste', (event) => {
 				// 触发输入事件
 				dom.mainMsgInp.dispatchEvent(new Event('input'));
 			});
+		}
+	}
+});
+
+// 全局的文件粘贴
+document.body.addEventListener('paste', (event) => {
+
+	event.preventDefault();
+
+	for(const item of event.clipboardData.items){
+		
+		if(item.type.startsWith('image')){
+
+			const reader = new FileReader();
+			reader.onload = (event) => {
+				onFile.image(event.target.result);
+			};
+			reader.readAsDataURL(item.getAsFile());
 		}
 	}
 });
@@ -896,31 +907,30 @@ dom.mainSendBtn.addEventListener('click', async () => {
 
 		// 处理图片上传
 		if(true){
-			const temp = [];
+			const imgList = [];
 
 			for(const fileDom of Array.from(dom.inpFileBox.querySelectorAll('.file'))){
 				if(fileDom.nodeName === 'IMG'){
-					temp.push(fileDom.src);
-					// uiUserMsgPlugins.push({ type: 'image', data: { file: fileDom.src }});
+					imgList.push(fileDom.src);
 					fileDom.parentNode.click();	// 从页面移除这个图片
 				}
 			}
 
-			if(temp.length !== 0){
+			if(imgList.length !== 0){
 				addMsg(dialog, 'user loading');
-			}
 
-			const upFileList = await msgListener.add((msg) => {
-				if(msg.type === '// UPLOAD IMAGE BASE64 //'){
-					return msg.list;
+				const upFileList = await msgListener.add((msg) => {
+					if(msg.type === '// UPLOAD IMAGE BASE64 //'){
+						return msg.list;
+					}
+					return false;
+				}, () => {
+					socket.send(`// UPLOAD IMAGE BASE64 //\n${imgList.join('\n')}`);
+				});
+	
+				for(const li of upFileList){
+					uiUserMsgPlugins.push({ type: 'image', data: { file: li.url, fileId: li.fileId }});
 				}
-				return false;
-			}, () => {
-				socket.send(`// UPLOAD IMAGE BASE64 //\n${temp.join('\n')}`);
-			});
-
-			for(const li of upFileList){
-				uiUserMsgPlugins.push({ type: 'image', data: { file: li.url, fileId: li.fileId }});
 			}
 		}
 
@@ -1026,6 +1036,6 @@ Promise.resolve().then(console.log(`%c${String.raw`
 
 Promise.resolve().then(console.log(`
 %c== INFO ==
- | Author: [ ApliNi, MickyDot ]
+ | People: [ ApliNi, MickyDot ]
  | Code: https://github.com/ApliNi/cat.ipacel.cc
 `, 'color: #FF8C00'));
