@@ -117,19 +117,19 @@
 				.main {
 					font-size: 15px;
 					&::before {
-						content: 'COMMAND';
+						content: 'COMMAND '  attr(title);
 					}
 				}
 				.args {
 					font-size: 13px;
 					&::before {
-						content: 'ARGS';
+						content: 'ARGS ' attr(title);
 					}
 				}
 				.demo {
 					font-size: 14px;
 					&::before {
-						content: 'DEMO';
+						content: 'DEMO ' attr(title);
 					}
 				}
 			}
@@ -262,7 +262,7 @@
 							<h3>钓鱼</h3>
 							<div class="cmd">
 								<p class="main">钓鱼 [赠送 $1], 收杆</p>
-								<p class="args">$1: {物品} [数量] {at}</p>
+								<p class="args" title="$1">{物品} [数量] {at}</p>
 								<p class="demo">钓鱼赠送 生鳕鱼 64 @ApliNi</p>
 							</div>
 							<p>钓鱼游戏功能, 库存持久化, 支持转移自己持有的物品</p>
@@ -294,8 +294,8 @@
 							<h3>编解码</h3>
 							<div class="cmd">
 								<p class="main">base64|url $1 $2</p>
-								<p class="args">编码|coding|解码|decoding</p>
-								<p class="args">{字符串}</p>
+								<p class="args" title="$1">编码|coding|解码|decoding</p>
+								<p class="args" title="$2">{字符串}</p>
 							</div>
 						</div>
 						<div class="cmdBox">

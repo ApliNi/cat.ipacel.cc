@@ -29,7 +29,7 @@ const config = {
 	maxMsgInpLength: 3072,
 	maxImgCount: 3,
 	maxImgBase64Length: 4 * 1024 * 1024,
-	saveMsgLength: 256,
+	saveMsgLength: 128,
 	// .msg 外边距
 	liMsgHeightOffset: 25,
 	// .li 内边距
@@ -620,6 +620,9 @@ export const lib = {
 	},
 
 	getTextNodeList: (el) => {
+		if(el.nodeType === Node.TEXT_NODE){
+			return [el];
+		}
 		const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
 		const textNodeList = [];
 		let currentNode;
@@ -634,7 +637,7 @@ export const lib = {
 		.replace(/\$/g, '&#36;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;')
-		.replace(/ /g, '&nbsp;')
+		// .replace(/ /g, '&nbsp;') // 影响文本换行
 		.replace(/`/g, '&grave;')
 		.replace(/'/g, '&apos;')
 		.replace(/"/g, '&quot;'),
@@ -1071,10 +1074,10 @@ document.body.addEventListener('mousedown', (event) => {
 
 document.addEventListener('copy', (event) => {
 
-	event.preventDefault();
-
 	// 存在 data-copy 属性
 	if(stat.copyEl){
+		event.preventDefault();
+
 		if(stat.copyEl.hasAttribute('data-copy')){
 			const copyText = stat.copyEl.getAttribute('data-copy');
 			lib.copy(copyText);
@@ -1111,79 +1114,69 @@ document.addEventListener('copy', (event) => {
 		}
 	}else{
 		const selection = window.getSelection();
-		// const selectText = selection.toString();
-		if(selection.toString() !== ''){
-			const range = selection.getRangeAt(0);
-			const commonAncestor = range.commonAncestorContainer;
-
-			const commonAncestorTextNodeList = lib.getTextNodeList(commonAncestor);
-			
-			// 移除起始节点和结束节点前后的部分... 自己计算出选中的文本
-			const selectTextNodeList = [];
-			const temp = {
-				start: false,
-				end: false,
-			};
-			for(const node of commonAncestorTextNodeList){
-				if(node === range.startContainer){
-					temp.start = true;
-				}
-				if(temp.start && !temp.end){
-					selectTextNodeList.push(node);
-				}
-				if(node === range.endContainer){
-					temp.end = true;
-				}
-			}
-
-			const _selectText = selectTextNodeList.map(node => node.textContent).join('');
-			const selectText = _selectText.slice(range.startOffset, _selectText.length - selectTextNodeList.at(-1).length + range.endOffset);
-			
-			const textNodeText = commonAncestorTextNodeList.map(node => node.textContent).join('');
-			
-
-			if(!textNodeText.includes(selectText)){
-				// 如果提取部分不包含选中部分, 则可能部分节点未被完全选中, 情况较为复杂, 暂不处理
-				lib.copy(selectText);
-				return;
-			}
-
-			// 重新处理被选中的文本节点
-			const textList = [];
-			const set = new Set();
-			for(const node of commonAncestorTextNodeList){
-				
-				const dataCoptEl = node.parentNode.closest('*[data-copy]');
-				if(dataCoptEl){
-					if(set.has(dataCoptEl)){
-						continue;
-					}
-					if(!selectText.includes(dataCoptEl.textContent)){
-						// 检查, 如果元素未被完全选中, 则不处理
-						lib.copy(selectText);
-						return;
-					}
-					if(dataCoptEl){
-						set.add(dataCoptEl);
-						textList.push(dataCoptEl.getAttribute('data-copy'));
-						// 如果这个元素是块级的, 那么需要补全它的换行符
-						if(dataCoptEl.classList.contains('--block')){
-							textList.push('\n');
-						}
-					}
-				}else{
-					textList.push(node.textContent);
-				}
-			}
-			const textListJoin = textList.join('');
-			
-
-			const sliceEnd = textListJoin.length - textNodeText.length + (range.startOffset + selectText.length);
-
-			const finallyText = textListJoin.slice(range.startOffset, sliceEnd);
-			
-			lib.copy(finallyText);
+		if(selection.toString() === ''){
+			return;
 		}
+		event.preventDefault();
+
+		const textList = [];
+		const set = new Set();
+		let runFor = false;
+
+		const pushNodeTextContent = (node) => {
+			if(node === range.startContainer){
+				textList.push(node.textContent.slice(range.startOffset, node.textContent.length));
+			}
+			else if(node === range.endContainer){
+				textList.push(node.textContent.slice(0, range.endOffset));
+			}
+			else {
+				textList.push(node.textContent);
+			}
+		};
+
+		const range = selection.getRangeAt(0);
+		const commonAncestorTextNodeList = lib.getTextNodeList(range.commonAncestorContainer);
+		for(const node of commonAncestorTextNodeList){
+
+			// 绕过未选中的节点
+			if(node === range.startContainer) runFor = true;
+			if(!runFor) continue;
+			// 跳过之后的节点
+			if(node === range.endContainer) runFor = false;
+
+			const dataCoptEl = node.parentNode.closest('*[data-copy]');
+
+			if(!dataCoptEl){
+				pushNodeTextContent(node);
+				continue;
+			}
+
+			if(set.has(dataCoptEl)){
+				continue;
+			}
+
+			// 这里是当前可复制整体的第一个文本节点
+			// 检查这个可复制整体是否被完全选中
+
+			// const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+			const dataCoptElNodeList = lib.getTextNodeList(dataCoptEl);
+			if(node !== dataCoptElNodeList[0]){
+				// 这个可复制整体被截断了
+				pushNodeTextContent(node);
+				continue;
+			}
+
+			// 处理这个完整的可复制整体
+			set.add(dataCoptEl);
+			textList.push(dataCoptEl.getAttribute('data-copy'));
+			// 如果这个元素是块级的, 那么需要补全它的换行符
+			if(dataCoptEl.classList.contains('--block')){
+				textList.push('\n');
+			}
+		}
+
+		lib.copy(textList.join('').trim());
 	}
 });
 
