@@ -130,9 +130,11 @@ body {
 			bottom: 10px;
 			right: 10px;
 			flex-direction: row-reverse;
+			pointer-events: none;
 
 			.btn {
 				margin: 0 3.5px;
+				pointer-events: auto;
 
 				color: var(--a1);
 	
@@ -259,7 +261,7 @@ body {
 			margin: -64px 0 0 -32px;
 			padding: 32px;
 
-			height: 0px;
+			height: fit-content;
 		}
 
 		opacity: 1;
@@ -349,7 +351,7 @@ body {
 				max-width: 100%;
 				width: fit-content;
 				border-radius: 7px;
-				margin: 7px;
+				margin: 7px 0;
 				-webkit-user-drag: auto;
 				/* background-color: #5dccff17; */
 				box-shadow: 0px 3px 17px 2px rgb(50 50 93 / 10%), 0 2px 5px rgb(0 0 0 / 7%);
@@ -383,20 +385,6 @@ body {
 				tab-size: 4;
 				font-size: 14px;
 				position: relative;
-
-				.btn {
-					position: absolute;
-					right: 9px;
-					top: 9px;
-					background-color: #ffffff70;
-					color: var(--greyAuto);
-					opacity: 0.4;
-				}
-				&:hover {
-					.btn {
-						opacity: 0.8;
-					}
-				}
 
 				code {
 					display: block;
@@ -616,20 +604,9 @@ body {
 				&.user {
 					background-color: #15559ad4;
 					color: var(--a1);
-					/* border: var(--c) solid 1px; */
 				}
 				&.ai {
 					background-color: #212121d1;
-					/* border: var(--e) solid 1px; */
-				}
-				&.loading {
-					background-color: #212121d1;
-					/* border: var(--e) solid 1px; */
-				}
-				pre {
-					.btn {
-						background-color: rgba(33, 33, 33, 0.82);
-					}
 				}
 				table td, img {
 					background-color: #4747472e;

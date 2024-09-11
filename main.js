@@ -27,9 +27,9 @@ export const stat = {
 const config = {
 	reconnect: true,
 	maxMsgInpLength: 3072,
-	maxImgCount: 3,
+	maxImgCount: 4,
 	maxImgBase64Length: 4 * 1024 * 1024,
-	saveMsgLength: 128,
+	saveMsgLength: 256,
 	// .msg 外边距
 	liMsgHeightOffset: 25,
 	// .li 内边距
@@ -49,6 +49,27 @@ const dom = {
 
 	toTopBtn: document.querySelector('#toTopBtn'),
 };
+
+let db = null;
+await new Promise((resolve, reject) => {
+	const request = indexedDB.open('def', 10);
+	
+	request.onupgradeneeded = (event) => {
+		db = event.target.result;
+
+		// | id | text |
+
+		const objectStore = db.createObjectStore('msg', {
+			keyPath: 'id',
+			autoIncrement: true,
+		});
+	};
+	
+	request.onsuccess = (event) => {
+		db = event.target.result;
+		resolve();
+	};
+});
 
 let socket = null;
 
@@ -150,16 +171,16 @@ const fn = {
 
 		lib.btnFlash(dom.mainSendBtn);
 
-		const dialog = dom.msgList.querySelector(`.li.time_${msg.time}`);
+		const dialog = dom.msgList.querySelector(`.li.__${msg.time}`);
 		if(!dialog){
 			return;
 		}
-		const loading = dom.msgList.querySelector(`.li.time_${msg.time} .loading`);
+		const loading = dom.msgList.querySelector(`.li.__${msg.time} .loading`);
 		if(loading){
-			delMsg(dialog, loading);
+			delMsg(dialog, loading, false);
 		}
 		
-		addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog));
+		addMsg({ dialog, type: 'ai', html: renderPluginsMsg(msg.plugins, dialog) });
 
 		lib.saveMsg('ai', msg.plugins);
 	},
@@ -194,25 +215,30 @@ marked.use(markedExtendedLatex({
 marked.use({
 	breaks: true,
 	renderer: {
+
 		link: (token) => {
 			let { href, raw, text, title } = token;
 			const safetyHref = lib.htmlAttrEscape(href);
-			return `<a href="${safetyHref}" title="${lib.htmlAttrEscape(title || '')}" target="_blank" title="${safetyHref}">${lib.htmlEscape(text)}</a>`;
+			return `<a href="${safetyHref}" title="${lib.htmlAttrEscape(title || '')}" target="_blank" title="${safetyHref}">${text}</a>`;
 		},
+
 		image: (token) => {
 			let { href, raw, text, title } = token;
-			return `<img src="${lib.htmlAttrEscape(href)}" alt="${lib.htmlAttrEscape(text || '')}" title="${lib.htmlAttrEscape(title)}" loading="lazy" />`;
+			return `<img src="${lib.htmlAttrEscape(href)}" alt="${text}" title="${lib.htmlAttrEscape(title)}" loading="lazy" />`;
 		},
+
 		code: (token) => {
 			let { lang, raw, text } = token;
-			const safetyLang = lib.htmlAttrEscape(lang || '');
-			return `<pre><button class="btn" onclick="lib.copy(this.nextElementSibling.innerText); lib.btnFlash(this, 1500);" title="${`${safetyLang} 点击复制`.trim()}">#</button><code class="hljs --block" data-lang="${safetyLang}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			const attrLang = lib.htmlAttrEscape(lang || '');
+			return `<pre><code class="hljs --block" data-lang="${attrLang}" title="${attrLang}" data-copy="${lib.htmlAttrEscape(text)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
+
 		codespan: (token) => {
 			let { lang, raw, text } = token;
-			let _text = raw.replace(/^`|`$/g, '');	// 绕过 html 转义
+			const _text = raw.replace(/^`|`$/g, '');
 			return `<code class="hljs">${hljs.highlightAuto(_text).value}</code>`;
 		},
+
 		html: (token) => {
 			// 这可能不够安全, 可选用 purify.min.js 再次处理
 			try{
@@ -226,11 +252,14 @@ marked.use({
 	},
 });
 
-const markdownRender = (text) => {
-	return marked.parse(text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, ''));
-};
-
 const renderPluginsMsg = (plugins, dialog) => {
+
+	const markdownRender = (text) => {
+		const html = marked.parse(text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, ''));
+		return html;
+		// return `<div data-copy="${lib.htmlAttrEscape(text)}">${html}</div>`;
+	};
+
 	const htmlList = [];
 	for(const li of plugins){
 		switch(li.type){
@@ -266,7 +295,7 @@ const renderPluginsMsg = (plugins, dialog) => {
 
 			case 'loading':
 				setTimeout(() => {
-					addMsg(dialog, 'loading');
+					addMsg({ dialog, type: 'ai', addClass: 'loading' });
 				}, 50);
 				break;
 		
@@ -278,11 +307,14 @@ const renderPluginsMsg = (plugins, dialog) => {
 	return htmlList.join('');
 };
 
-const createDialog = (time, top = true) => {
+const createDialog = (mark = 0, toTop = true) => {
 	const dialog = document.createElement('div');
-	dialog.setAttribute('class', `li time_${time}`);
-	// dom.msgList.appendChild(dialog);
-	if(top){
+	dialog.classList.add('li');
+	if(mark !== 0){
+		dialog.classList.add(`__${mark}`);
+	}
+
+	if(toTop){
 		if(dom.msgList.firstChild){
 			dom.msgList.insertBefore(dialog, dom.msgList.firstChild);
 		}else{
@@ -302,38 +334,55 @@ const createDialog = (time, top = true) => {
 	return dialog;
 };
 
-const delMsg = async (dialog, el, reHeight = true) => {
+const delMsg = (dialog, el, reHeight = true) => {
 
 	if(reHeight){
 		const height = dialog.offsetHeight - el.offsetHeight - config.liMsgHeightOffset;
-		dialog.setAttribute('style', `height: ${height}px;`);
+		dialog.style.height = `${height}px`;
 	}
-	el.setAttribute('style', `margin-top: -${el.offsetHeight + config.liMsgHeightOffset}px;`);
+	el.style.marginTop = `-${el.offsetHeight + config.liMsgHeightOffset}px`;
 	el.classList.add('--quit');
 	el.classList.add('--neglect');
 
-	setTimeout(() => {
+	el.addEventListener('transitionend', function handler(){
 		el.remove();
-		// 如果对话框空了, 就删除这个对话框
+		// 删除空对话框
 		if(dialog.childNodes.length === 0){
 			dialog.remove();
 		}
-	}, 500);
+		
+		el.removeEventListener('transitionend', handler);
+	});
 };
 
-const addMsg = async (dialog, type = 'user', html = '', toTop = false) => {
+/**
+ * 渲染一条消息
+ * @param {Object} opt - 选项
+ * @param {Element} opt.dialog - 对话框元素
+ * @param {string} [opt.type = 'user'] - 消息类型, 可选 'user' 或 'ai'
+ * @param {string} [opt.html = ''] - 消息内容, 支持 HTML 代码
+ * @param {boolean} [opt.toTop = false] - 是否置顶
+ * @param {string} [opt.addClass = ''] - 附加类名
+ * @returns {Promise<Element>} - 新创建的消息元素
+ */
+const addMsg = async (opt) => {
 
-	try{
+	const { dialog, type = 'user', html = '', toTop = false, addClass = '' } = opt;
+
+	return new Promise((resolve, reject) => {
+
 		requestAnimationFrame(() => {
-			dialog.setAttribute('data-update-time', Date.now());
+			// dialog.setAttribute('data-update-time', Date.now());
 			const msg = document.createElement('div');
 			msg.innerHTML = html;
-			msg.setAttribute('class', `msg ${type} --quit`);
+			msg.setAttribute('class', `msg ${type} ${addClass} --quit`);
+
 			// 如果只有一个 img 元素
 			const comp = Array.from(msg.children).filter((child) => !child.classList.contains('__markIgnore'));
 			if(comp.length === 1 && comp[0].tagName === 'IMG'){
 				msg.classList.add('single_img');
 			}
+
 			if(toTop){
 				if(dialog.firstChild){
 					dialog.insertBefore(msg, dialog.firstChild);
@@ -341,62 +390,144 @@ const addMsg = async (dialog, type = 'user', html = '', toTop = false) => {
 					dialog.appendChild(msg);
 				}
 			}else{
-				dialog.appendChild(msg);
+				if(type === 'ai'){
+					const userMsg = dialog.querySelector('.msg.user');
+					if(userMsg){
+						userMsg.insertAdjacentElement('afterend', msg);
+					}else{
+						dialog.appendChild(msg);
+					}
+				}else{
+					dialog.appendChild(msg);
+				}
 			}
+
+			resolve(msg);
 
 			// 超出视口范围就不需要渲染过度动画了
 			if(!lib.inViewport(dialog, 0.3)){
 				msg.classList.remove('--quit');
-				dialog.setAttribute('style', `height: fit-content;`);
+				// dialog.style.height = `auto`;
 				return;
+			}
+
+			// 防止造成抖动的临时解决方法
+			for(const dom of Array.from(dialog.querySelectorAll('.--neglect'))){
+				dom.remove();
 			}
 	
 			requestAnimationFrame(() => {
 
-				const height = Array.from(dialog.childNodes).reduce((acc, child) =>
-					child.classList.contains('--neglect') ? acc : acc + child.offsetHeight + config.liMsgHeightOffset,
-					0
-				) + config.liHeightOffset;
+				const height = Array.from(dialog.childNodes).reduce((acc, child) => child.classList.contains('--neglect') ? acc : acc + child.offsetHeight + config.liMsgHeightOffset, 0) + config.liHeightOffset;
 				
-				dialog.setAttribute('style', `height: ${height}px;`);
+				dialog.style.height = `${height}px`;
 				msg.classList.remove('--quit');
-	
-				setTimeout(() => {
-					if(dialog.getAttribute('data-update-time') < Date.now() - 350){
-						dialog.setAttribute('style', `height: fit-content;`);
+
+				dialog.addEventListener('transitionend', function handler(){
+					if(dialog.style.height === `${height}px`){
+						dialog.style.removeProperty('height');
+						if(dialog.style.cssText.trim() === ''){
+							dialog.removeAttribute('style');
+						}
 					}
-				}, 350);
+					
+					dialog.removeEventListener('transitionend', handler);
+				});
 			});
 		});
-	}catch(err){
+	}).catch(err => {
 		console.warn('[addMsg]', err);
-	}
+	});
 };
 
 export const lib = {
 
 	loadMsg: async (delay = 0) => {
-		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [
 
-			{"role":"user","plugins":[{"type":"text","data":{"text":"`/^( *)(bull) [\\s\\S]+?(?:hr|def|\\n{2,}(?! )(?!\\1bull )\\n*|\\s*$)/`\n帮我分析这个正则表达式"}}]},
+		// [old code] 处理旧版本数据
+		await new Promise(async (resolve, reject) => {
+			const localStorageMsgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
+			if(localStorageMsgList.length !== 0){
 
-			{"role":"ai","plugins":[{"type":"text","data":{"text":"这个正则表达式的作用是匹配一个特定格式的文本块，具体分析如下：\n\n1. `^`：匹配输入的开始位置。\n2. `( *)`：匹配零个或多个空格字符，并将其捕获为组 1。\n3. `(bull)`：匹配字符串 \"bull\"，并将其捕获为组 2。\n4. `[\\\\s\\\\S]+?`：匹配一个或多个任意字符（包括空白和非空白），使用非贪婪模式。\n5. `(?: ... )`：这是一个非捕获组，用于组合多个条件：\n   - `hr`：匹配字符串 \"hr\"。\n   - `def`：匹配字符串 \"def\"。\n   - `\\\\n {2,}(?! )(?!\\\\1bull )\\\\n*`：匹配两个或多个换行符，后面不能跟空格且不能跟前面捕获的空格和 \"bull\"。\n   - `|`：表示或的关系。\n   - `\\\\s*$`：匹配零个或多个空白字符，直到输入的结束位置。\n\n综上所述，这个正则表达式主要用于匹配以 \"bull\" 开头的文本块，后面可以跟随任意内容，最后以特定的方式结束。如果你有更多问题或者想深入讨论，随时告诉我哦 (｡・̀ᴗ-)✧"}}]},
+				for(const msg of localStorageMsgList){
+					// 导入到数据库
+					const transaction = db.transaction([ 'msg' ], 'readwrite');
+					const store = transaction.objectStore('msg');
+					const newItem = {
+						text: JSON.stringify(msg),
+					};
+					const request = store.add(newItem);
+	
+					await new Promise((_resolve) => {
+						request.onsuccess = () => {
+							_resolve();
+						};
+					});
+				}
 
-			{"role":"user","plugins":[{"type":"text","data":{"text":"编写一个四行四列的表格"}}]},
+				localStorage.removeItem('saveMsg');
+			}
+			resolve();
+		});
 
-			{"role":"ai","plugins":[{"type":"text","data":{"text":"当然可以! 这是一个四行四列的表格：\n\n| 列1 | 列2 | 列3 | 列4 |\n|-----|-----|-----|-----|\n| 行1 | 行1 | 行1 | 行1 |\n| 行2 | 行2 | 行2 | 行2 |\n| 行3 | 行3 | 行3 | 行3 |\n| 行4 | 行4 | 行4 | 行4 |\n\n这样可以吗？(｡・̀ᴗ-)✧"}}]},
+		const isNull = await new Promise((resolve, reject) => {
+			const transaction = db.transaction([ 'msg' ], 'readonly');
+			const store = transaction.objectStore('msg');
+			const request = store.count();
+			request.onsuccess = () => {
+				if(request.result === 0){
+					resolve(true);
+				}else{
+					resolve(false);
+				}
+			};
+		});
 
-			{"role":"user","plugins":[{"type":"text","data":{"text":"介绍一下你自己"}}]},
+		let msgList = [];
 
-			{"role":"ai","plugins":[{"type":"text","data":{"text":"你好呀，我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧ 我是一名开发者，和大家一起交流和学习。如果你有任何问题或者想聊的内容，随时告诉我哦！"}}]},
+		if(isNull){
+			
+			msgList = [
 
-			{"role":"user","plugins":[{"type":"text","data":{"text":"定积分的基本定理"}}]},
-
-			{"role":"ai","plugins":[{"type":"text","data":{"text":"定积分的基本定理主要包括两个部分：第一部分是关于不定积分的微分，第二部分是关于定积分的计算。它说明了定积分与不定积分之间的关系，具体来说，如果 $F(x)$ 是 $f(x)$ 的一个不定积分，那么：\n\n$$ \\int_{a}^{b} f(x) \\, dx = F(b) - F(a) $$\n\n这让我们可以通过找到一个原函数来计算定积分哦 (｡・̀ᴗ-)✧"}}]},
-		];
-
+				{"role":"user","plugins":[{"type":"text","data":{"text":"`/^( *)(bull) [\\s\\S]+?(?:hr|def|\\n{2,}(?! )(?!\\1bull )\\n*|\\s*$)/`\n帮我分析这个正则表达式"}}]},
+	
+				{"role":"ai","plugins":[{"type":"text","data":{"text":"这个正则表达式的作用是匹配一个特定格式的文本块，具体分析如下：\n\n1. `^`：匹配输入的开始位置。\n2. `( *)`：匹配零个或多个空格字符，并将其捕获为组 1。\n3. `(bull)`：匹配字符串 \"bull\"，并将其捕获为组 2。\n4. `[\\\\s\\\\S]+?`：匹配一个或多个任意字符（包括空白和非空白），使用非贪婪模式。\n5. `(?: ... )`：这是一个非捕获组，用于组合多个条件：\n   - `hr`：匹配字符串 \"hr\"。\n   - `def`：匹配字符串 \"def\"。\n   - `\\\\n {2,}(?! )(?!\\\\1bull )\\\\n*`：匹配两个或多个换行符，后面不能跟空格且不能跟前面捕获的空格和 \"bull\"。\n   - `|`：表示或的关系。\n   - `\\\\s*$`：匹配零个或多个空白字符，直到输入的结束位置。\n\n综上所述，这个正则表达式主要用于匹配以 \"bull\" 开头的文本块，后面可以跟随任意内容，最后以特定的方式结束。如果你有更多问题或者想深入讨论，随时告诉我哦 (｡・̀ᴗ-)✧"}}]},
+	
+				{"role":"user","plugins":[{"type":"text","data":{"text":"编写一个四行四列的表格"}}]},
+	
+				{"role":"ai","plugins":[{"type":"text","data":{"text":"当然可以! 这是一个四行四列的表格：\n\n| 列1 | 列2 | 列3 | 列4 |\n|-----|-----|-----|-----|\n| 行1 | 行1 | 行1 | 行1 |\n| 行2 | 行2 | 行2 | 行2 |\n| 行3 | 行3 | 行3 | 行3 |\n| 行4 | 行4 | 行4 | 行4 |\n\n这样可以吗？(｡・̀ᴗ-)✧"}}]},
+	
+				{"role":"user","plugins":[{"type":"text","data":{"text":"介绍一下你自己"}}]},
+	
+				{"role":"ai","plugins":[{"type":"text","data":{"text":"你好呀，我是来自 IpacEL 的 CiAt 哦 (｡・̀ᴗ-)✧ 我是一名开发者，和大家一起交流和学习。如果你有任何问题或者想聊的内容，随时告诉我哦！"}}]},
+	
+				{"role":"user","plugins":[{"type":"text","data":{"text":"定积分的基本定理"}}]},
+	
+				{"role":"ai","plugins":[{"type":"text","data":{"text":"定积分的基本定理主要包括两个部分：第一部分是关于不定积分的微分，第二部分是关于定积分的计算。它说明了定积分与不定积分之间的关系，具体来说，如果 $F(x)$ 是 $f(x)$ 的一个不定积分，那么：\n\n$$ \\int_{a}^{b} f(x) \\, dx = F(b) - F(a) $$\n\n这让我们可以通过找到一个原函数来计算定积分哦 (｡・̀ᴗ-)✧"}}]},
+			];
+		}else{
+			await new Promise((resolve, reject) => {
+	
+				const transaction = db.transaction(['msg'], 'readonly');
+				const store = transaction.objectStore('msg');
+				// const request = store.openCursor(null, 'prev');	// 倒序遍历
+				const request = store.openCursor();
+	
+				request.onsuccess = async (event) => {
+					const cursor = event.target.result;
+					if(cursor){
+						msgList.push(JSON.parse(cursor.value.text));
+						cursor.continue();
+					}else{
+						resolve();
+					}
+				};
+			});
+		}
+		
+	
 		let dialog = createDialog(0);
-
+	
 		for(let i = msgList.length - 1; i >= 0; i--){
 			// 加载过程中运行了清除消息
 			if(stat.clearMsg){
@@ -406,11 +537,11 @@ export const lib = {
 			const msg = msgList[i];
 			if(msg.role === 'user'){
 				// 创建新对话框
-				addMsg(dialog, 'user', renderPluginsMsg(msg.plugins, dialog), true);
+				addMsg({ dialog, type: 'user', html: renderPluginsMsg(msg.plugins, dialog), toTop: true });
 				dialog = createDialog(0, false);
 			}
 			if(msg.role === 'ai'){
-				addMsg(dialog, 'ai', renderPluginsMsg(msg.plugins, dialog), true);
+				addMsg({ dialog, type: 'ai', html: renderPluginsMsg(msg.plugins, dialog), toTop: false });
 			}
 
 			await lib.sleep(delay);
@@ -448,14 +579,28 @@ export const lib = {
 			plugins.push(plugin);
 		}
 
-		const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
-		msgList.push({ role, plugins });
+		// const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
+		// msgList.push({ role, plugins });
 
-		for(let i = 0; i < msgList.length - config.saveMsgLength; i++){
-			msgList.shift();
-		}
+		// for(let i = 0; i < msgList.length - config.saveMsgLength; i++){
+		// 	msgList.shift();
+		// }
 
-		localStorage.setItem('saveMsg', JSON.stringify(msgList));
+		const transaction = db.transaction([ 'msg' ], 'readwrite');
+		const store = transaction.objectStore('msg');
+		const newItem = {
+			// id: null,
+			text: JSON.stringify({ role, plugins }),
+		};
+
+		const request = store.add(newItem);
+		request.onsuccess = () => {
+			// 检查当前字段数量, 超出则删除最早的一条消息
+
+
+		};
+
+		// localStorage.setItem('saveMsg', JSON.stringify(msgList));
 	},
 
 	syncMainInpStat: (loadMode = false) => {
@@ -675,7 +820,7 @@ const onFile = {
 				base64 = canvas.toDataURL('image/png');
 			}catch(err){
 				const dialog = createDialog('ui');
-				addMsg(dialog, 'ai', `<p>[/] 图像解析失败啦</p>`, true);
+				addMsg({ dialog, type: 'ai', html: `<p>[/] 图像解析失败啦</p>` });
 				return;
 			}
 		}
@@ -699,7 +844,7 @@ const onFile = {
 					base64 = canvas.toDataURL('image/jpeg');
 				}catch(err){
 					const dialog = createDialog('ui');
-					addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
+					addMsg({ dialog, type: 'ai', html: `<p>[/] 图像压缩失败啦</p>` });
 					return;
 				}
 
@@ -708,7 +853,7 @@ const onFile = {
 				if(base64.length > config.maxImgBase64Length){
 					zoom -= 0.3;
 					if(zoom <= 0){
-						addMsg(dialog, 'ai', `<p>[/] 图像压缩失败啦</p>`, true);
+						addMsg({ dialog, type: 'ai', html: `<p>[/] 图像压缩失败啦</p>` });
 						return;
 					}
 				}else{
@@ -720,7 +865,7 @@ const onFile = {
 		// 内容和已有图片相同
 		if(imgList.some((img) => base64 === img.src)){
 			const dialog = createDialog('ui');
-			addMsg(dialog, 'ai', `<p>[/] 这张图片已经存在了哦</p>`, true);
+			addMsg({ dialog, type: 'ai', html: `<p>[/] 这张图片已经存在了哦</p>` });
 			return;
 		};
 
@@ -883,10 +1028,10 @@ dom.mainMsgInp.addEventListener('input', (event) => {
 		dom.mainMsgInp.textContent = stat.mainMsgInp.text;
 		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
 	}else{
-		stat.mainMsgInp.text = dom.mainMsgInp.textContent;
-		stat.mainMsgInp.pos = lib.getCaretPos(dom.mainMsgInp);
+		stat.mainMsgInp.text = dom.mainMsgInp.textContent.replace(/\r\n$/, '');
+		stat.mainMsgInp.pos = Math.min(lib.getCaretPos(dom.mainMsgInp), stat.mainMsgInp.text.length);
 
-		dom.mainMsgInp.textContent = dom.mainMsgInp.textContent;
+		dom.mainMsgInp.textContent = stat.mainMsgInp.text;	// 合并为一个文本节点
 		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
 
 		// 支持撤销功能
@@ -961,7 +1106,8 @@ dom.mainSendBtn.addEventListener('click', async () => {
 			}
 
 			if(imgList.length !== 0){
-				addMsg(dialog, 'user loading');
+				
+				addMsg({ dialog, type: 'user', addClass: 'loading' });
 
 				const upFileList = await msgListener.add((msg) => {
 					if(msg.type === '// UPLOAD IMAGE BASE64 //'){
@@ -997,12 +1143,13 @@ dom.mainSendBtn.addEventListener('click', async () => {
 		return;
 	}
 	
-	addMsg(dialog, 'user', renderPluginsMsg(uiUserMsgPlugins, dialog));
-	addMsg(dialog, 'ai loading');
-
-	lib.saveMsg('user', uiUserMsgPlugins);
+	
+	await addMsg({ dialog, type: 'user', html: renderPluginsMsg(uiUserMsgPlugins, dialog), toTop: true });
+	addMsg({ dialog, type: 'ai', addClass: 'loading' });
 	
 	socket.send(JSON.stringify({ type:'userMsg', plugins: uiUserMsgPlugins, time }));
+
+	lib.saveMsg('user', uiUserMsgPlugins);
 });
 
 dom.mainToolBtn.addEventListener('click', async () => {
@@ -1017,7 +1164,7 @@ dom.mainToolBtn.addEventListener('click', async () => {
 
 document.body.addEventListener('mousedown', (event) => {
 
-	// 右键点击
+	// 非右键
 	if(event.button !== 2){
 		stat.copyEl = null;
 		return;
@@ -1080,7 +1227,7 @@ document.addEventListener('copy', (event) => {
 
 		if(stat.copyEl.hasAttribute('data-copy')){
 			const copyText = stat.copyEl.getAttribute('data-copy');
-			lib.copy(copyText);
+			lib.copy(copyText.trim());
 		}else{
 
 			// 按顺序遍历这个被选中的元素中的所有子元素, 单独处理存在 data-copy 的和其他元素
@@ -1110,7 +1257,7 @@ document.addEventListener('copy', (event) => {
 				}
 			}
 
-			lib.copy(textList.join(''));
+			lib.copy(textList.join('').trim());
 		}
 	}else{
 		const selection = window.getSelection();
@@ -1124,15 +1271,14 @@ document.addEventListener('copy', (event) => {
 		let runFor = false;
 
 		const pushNodeTextContent = (node) => {
+			let text = node.textContent;
+			if(node === range.endContainer){
+				text = text.slice(0, range.endOffset);
+			}
 			if(node === range.startContainer){
-				textList.push(node.textContent.slice(range.startOffset, node.textContent.length));
+				text = text.slice(range.startOffset);
 			}
-			else if(node === range.endContainer){
-				textList.push(node.textContent.slice(0, range.endOffset));
-			}
-			else {
-				textList.push(node.textContent);
-			}
+			textList.push(text);
 		};
 
 		const range = selection.getRangeAt(0);
