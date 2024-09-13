@@ -9,12 +9,19 @@ CiAt 是一个拥有许多功能的聊天机器人, 它将与许多平台和设�
 - 无感内容复制, 自动选中, 自动提取源码
 
 ### 渲染
-- Markdown
-- LaTeX (KaTeX)
-- Mermaid
+- Markdown: `marked`
+  - Highlight: `highlight.js`
+  - Marked Emoji: `marked-emoji`
+- LaTeX: `katex`
+- Mermaid: `mermaid`
 
-### 工具
+### 目录
+- 主程序: `./index.html`
 - 图片查看器: `./img.html`
+- 配置编辑器: `./config/index.html`
+- 帮助文档: `./help.html`
+- 第三方资源目录: `./l2/`
+- 模块资源目录: `./l3/`
 
 > [!NOTE]
 > 此存储库不接受 Pull request, 如果您有任何想法, 可以通过 Issue 提出.
