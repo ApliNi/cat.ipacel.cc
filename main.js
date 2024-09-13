@@ -29,7 +29,7 @@ const config = {
 	maxMsgInpLength: 3072,
 	maxImgCount: 4,
 	maxImgBase64Length: 4 * 1024 * 1024,
-	saveMsgLength: 256,
+	saveMsgLength: 384,
 	// .msg 外边距
 	liMsgHeightOffset: 25,
 	// .li 内边距
@@ -207,7 +207,7 @@ marked.use(markedExtendedLatex({
 
 		const mark = /^<span class="katex-display">/.test(html) ? '$$' : '$';
 
-		html = html.replace(/<span class="katex">/, `<span class="katex ${mark === '$$' ? '--block' : ''}" data-copy="${lib.htmlAttrEscape(`${mark}${formula}${mark}`)}">`);
+		html = html.replace(/<span class="katex">/, `<span class="katex" data-copy="${lib.htmlAttrEscape(`${mark}${formula}${mark}`)}">`);
 		return html;
 	},
 }));
@@ -219,7 +219,7 @@ marked.use({
 		link: (token) => {
 			let { href, raw, text, title } = token;
 			const safetyHref = lib.htmlAttrEscape(href);
-			return `<a href="${safetyHref}" title="${lib.htmlAttrEscape(title || '')}" target="_blank" title="${safetyHref}">${text}</a>`;
+			return `<a href="${safetyHref}" title="${lib.htmlAttrEscape(title || '')}" target="_blank" data-copy="${lib.htmlAttrEscape(text)}" title="${safetyHref}">${text}</a>`;
 		},
 
 		image: (token) => {
@@ -230,13 +230,13 @@ marked.use({
 		code: (token) => {
 			let { lang, raw, text } = token;
 			const attrLang = lib.htmlAttrEscape(lang || '');
-			return `<pre><code class="hljs --block" data-lang="${attrLang}" title="${attrLang}" data-copy="${lib.htmlAttrEscape(text)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
+			return `<pre><code class="hljs" data-lang="${attrLang}" title="${attrLang}" data-copy="${lib.htmlAttrEscape(text)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
 
 		codespan: (token) => {
 			let { lang, raw, text } = token;
 			const _text = raw.replace(/^`|`$/g, '');
-			return `<code class="hljs">${hljs.highlightAuto(_text).value}</code>`;
+			return `<code class="hljs" data-copy="${lib.htmlAttrEscape(_text)}">${hljs.highlightAuto(_text).value}</code>`;
 		},
 
 		html: (token) => {
@@ -256,8 +256,8 @@ const renderPluginsMsg = (plugins, dialog) => {
 
 	const markdownRender = (text) => {
 		const html = marked.parse(text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, ''));
-		return html;
-		// return `<div data-copy="${lib.htmlAttrEscape(text)}">${html}</div>`;
+		// return html;
+		return `<div data-copy="${lib.htmlAttrEscape(text)}">${html}</div>`;
 	};
 
 	const htmlList = [];
@@ -324,9 +324,10 @@ const createDialog = (mark = 0, toTop = true) => {
 		dom.msgList.appendChild(dialog);
 	}
 	
-
-	for(let i = 0; i < dom.msgList.childNodes.length - config.saveMsgLength; i++){
-		dom.msgList.removeChild(dom.msgList.firstChild);
+	// 删除超出保存范围的旧消息
+	const msgList = Array.from(dom.msgList.querySelectorAll('.li .msg'));
+	for(let i = msgList.length - 1; i >= config.saveMsgLength; i--){
+		delMsg(msgList[i].parentNode, msgList[i], false);
 	}
 
 	dom.currentDialog = dialog;
@@ -444,7 +445,7 @@ export const lib = {
 
 	loadMsg: async (delay = 0) => {
 
-		// [old code] 处理旧版本数据
+		// ! 处理旧版本数据
 		await new Promise(async (resolve, reject) => {
 			const localStorageMsgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
 			if(localStorageMsgList.length !== 0){
@@ -486,7 +487,7 @@ export const lib = {
 		let msgList = [];
 
 		if(isNull){
-			
+
 			msgList = [
 
 				{"role":"user","plugins":[{"type":"text","data":{"text":"`/^( *)(bull) [\\s\\S]+?(?:hr|def|\\n{2,}(?! )(?!\\1bull )\\n*|\\s*$)/`\n帮我分析这个正则表达式"}}]},
@@ -503,7 +504,7 @@ export const lib = {
 	
 				{"role":"user","plugins":[{"type":"text","data":{"text":"定积分的基本定理"}}]},
 	
-				{"role":"ai","plugins":[{"type":"text","data":{"text":"定积分的基本定理主要包括两个部分：第一部分是关于不定积分的微分，第二部分是关于定积分的计算。它说明了定积分与不定积分之间的关系，具体来说，如果 $F(x)$ 是 $f(x)$ 的一个不定积分，那么：\n\n$$ \\int_{a}^{b} f(x) \\, dx = F(b) - F(a) $$\n\n这让我们可以通过找到一个原函数来计算定积分哦 (｡・̀ᴗ-)✧"}}]},
+				{"role":"ai","plugins":[{"type":"text","data":{"text":"定积分的基本定理连接了微积分的两个主要概念：导数和积分。它可以分为两个部分：\n\n1. **第一部分**：如果 $f$ 是一个连续函数，$F$ 是 $f$ 的一个不定积分，那么对于区间 $[a, b]$，有：\n   $$ \\int_{a}^{b} f(x) \\, dx = F(b) - F(a) $$\n\n2. **第二部分**：如果 $F$ 是 $f$ 的一个不定积分，则 $F$ 在区间 $[a, b]$ 上是可导的，并且 $F'(x) = f(x)$。\n\n这一定理说明了积分和导数之间的深刻联系哦 (๑ > ᴗ < ๑)。"}}]},
 			];
 		}else{
 			await new Promise((resolve, reject) => {
@@ -516,7 +517,12 @@ export const lib = {
 				request.onsuccess = async (event) => {
 					const cursor = event.target.result;
 					if(cursor){
-						msgList.push(JSON.parse(cursor.value.text));
+						if(cursor.value.text){
+							// ! 兼容旧版本数据
+							msgList.push(JSON.parse(cursor.value.text));
+						}else{
+							msgList.push(cursor.value);
+						}
 						cursor.continue();
 					}else{
 						resolve();
@@ -579,28 +585,52 @@ export const lib = {
 			plugins.push(plugin);
 		}
 
-		// const msgList = JSON.parse(localStorage.getItem('saveMsg')) || [];
-		// msgList.push({ role, plugins });
-
-		// for(let i = 0; i < msgList.length - config.saveMsgLength; i++){
-		// 	msgList.shift();
-		// }
-
 		const transaction = db.transaction([ 'msg' ], 'readwrite');
 		const store = transaction.objectStore('msg');
 		const newItem = {
-			// id: null,
-			text: JSON.stringify({ role, plugins }),
+			role,
+			plugins,
+			// text: JSON.stringify({ role, plugins }),
 		};
 
 		const request = store.add(newItem);
-		request.onsuccess = () => {
-			// 检查当前字段数量, 超出则删除最早的一条消息
+		request.onsuccess = async () => {
 
+			// 删除超出保存范围的旧消息
+			let count = await new Promise((resolve, reject) => {
+				const transaction = db.transaction([ 'msg' ], 'readonly');
+				const store = transaction.objectStore('msg');
+				const request = store.count();
+				request.onsuccess = () => {
+					resolve(request.result);
+				};
+			});
+
+			if(count > config.saveMsgLength){
+				await new Promise((resolve, reject) => {
+					const transaction = db.transaction([ 'msg' ], 'readwrite');
+					const store = transaction.objectStore('msg');
+					const request = store.openCursor();
+					request.onsuccess = async (event) => {
+						const cursor = event.target.result;
+						if(cursor){
+							const request = cursor.delete();
+							request.onsuccess = () => {
+								count -= 1;
+								if(count <= config.saveMsgLength){
+									resolve();
+								}else{
+									cursor.continue();
+								}
+							};
+						}else{
+							resolve();
+						}
+					};
+				});
+			}
 
 		};
-
-		// localStorage.setItem('saveMsg', JSON.stringify(msgList));
 	},
 
 	syncMainInpStat: (loadMode = false) => {
@@ -782,7 +812,6 @@ export const lib = {
 		.replace(/\$/g, '&#36;')
 		.replace(/</g, '&lt;')
 		.replace(/>/g, '&gt;')
-		// .replace(/ /g, '&nbsp;') // 影响文本换行
 		.replace(/`/g, '&grave;')
 		.replace(/'/g, '&apos;')
 		.replace(/"/g, '&quot;'),
@@ -1188,21 +1217,7 @@ document.body.addEventListener('mousedown', (event) => {
 		return;
 	}
 
-	el = event.target.closest('code');
-	if(el){
-		lib.select(el);
-		stat.copyEl = el;
-		return;
-	}
-
-	el = event.target.closest('table');
-	if(el){
-		lib.select(el);
-		stat.copyEl = el;
-		return;
-	}
-
-	el = event.target.closest('.katex');
+	el = event.target.closest('*[data-copy]');
 	if(el){
 		lib.select(el);
 		stat.copyEl = el;
@@ -1222,43 +1237,45 @@ document.body.addEventListener('mousedown', (event) => {
 document.addEventListener('copy', (event) => {
 
 	// 存在 data-copy 属性
-	if(stat.copyEl){
+	if(stat.copyEl && stat.copyEl.hasAttribute('data-copy')){
 		event.preventDefault();
+		const copyText = stat.copyEl.getAttribute('data-copy');
+		lib.copy(copyText.trim());
 
-		if(stat.copyEl.hasAttribute('data-copy')){
-			const copyText = stat.copyEl.getAttribute('data-copy');
-			lib.copy(copyText.trim());
-		}else{
-
-			// 按顺序遍历这个被选中的元素中的所有子元素, 单独处理存在 data-copy 的和其他元素
+		// ! 现在所有可被自动选中的元素都有 data-copy 属性
+		// if(stat.copyEl.hasAttribute('data-copy')){
 			
-			const textNodeList = lib.getTextNodeList(stat.copyEl);
+		// }else{
 
-			const textList = [];
-			const set = new Set();	// 去除已被处理的 data-copy 元素
+		// 	// 按顺序遍历这个被选中的元素中的所有子元素, 单独处理存在 data-copy 的和其他元素
 			
-			for(const node of textNodeList){
+		// 	const textNodeList = lib.getTextNodeList(stat.copyEl);
 
-				const dataCoptEl = node.parentNode.closest('*[data-copy]');
-				if(dataCoptEl){
-					if(set.has(dataCoptEl)){
-						continue;
-					}
-					if(dataCoptEl){
-						set.add(dataCoptEl);
-						textList.push(dataCoptEl.getAttribute('data-copy'));
-						// 如果这个元素是块级的, 那么需要补全它的换行符
-						if(dataCoptEl.classList.contains('--block')){
-							textList.push('\n');
-						}
-					}
-				}else{
-					textList.push(node.textContent);
-				}
-			}
+		// 	const textList = [];
+		// 	const set = new Set();	// 去除已被处理的 data-copy 元素
+			
+		// 	for(const node of textNodeList){
 
-			lib.copy(textList.join('').trim());
-		}
+		// 		const dataCoptEl = node.parentNode.closest('*[data-copy]');
+		// 		if(dataCoptEl){
+		// 			if(set.has(dataCoptEl)){
+		// 				continue;
+		// 			}
+		// 			if(dataCoptEl){
+		// 				set.add(dataCoptEl);
+		// 				textList.push(dataCoptEl.getAttribute('data-copy'));
+		// 				// 如果这个元素是块级的, 那么需要补全它的换行符
+		// 				if(dataCoptEl.classList.contains('--block')){
+		// 					textList.push('\n');
+		// 				}
+		// 			}
+		// 		}else{
+		// 			textList.push(node.textContent);
+		// 		}
+		// 	}
+
+		// 	lib.copy(textList.join('').trim());
+		// }
 	}else{
 		const selection = window.getSelection();
 		if(selection.toString() === ''){
@@ -1267,8 +1284,6 @@ document.addEventListener('copy', (event) => {
 		event.preventDefault();
 
 		const textList = [];
-		const set = new Set();
-		let runFor = false;
 
 		const pushNodeTextContent = (node) => {
 			let text = node.textContent;
@@ -1282,43 +1297,73 @@ document.addEventListener('copy', (event) => {
 		};
 
 		const range = selection.getRangeAt(0);
-		const commonAncestorTextNodeList = lib.getTextNodeList(range.commonAncestorContainer);
-		for(const node of commonAncestorTextNodeList){
 
-			// 绕过未选中的节点
-			if(node === range.startContainer) runFor = true;
-			if(!runFor) continue;
-			// 跳过之后的节点
-			if(node === range.endContainer) runFor = false;
+		if(range.startContainer === range.endContainer){
+			pushNodeTextContent(range.startContainer);
+		}else{
+			const commonAncestorTextNodeList = lib.getTextNodeList(range.commonAncestorContainer);
+			const set = new Set();
+			let runFor = false;
+			let isNewLine = false;
+			for(const node of commonAncestorTextNodeList){
+	
+				// 绕过未选中的节点
+				if(node === range.startContainer) runFor = true;
+				if(!runFor){
+					continue;
+				}
+				// 跳过之后的节点
+				if(node === range.endContainer) runFor = false;
 
-			const dataCoptEl = node.parentNode.closest('*[data-copy]');
+				// 跳过连续的换行
+				if(isNewLine && node.data === '\n'){
+					continue;
+				}
+				isNewLine = node.data === '\n';
+	
+				const dataCoptEl = node.parentNode.closest('*[data-copy]');
+	
+				if(!dataCoptEl){
+					pushNodeTextContent(node);
+					continue;
+				}
+	
+				if(set.has(dataCoptEl)){
+					continue;
+				}
+	
+				// 这里是当前可复制整体的第一个文本节点
+				// 检查这个可复制整体是否被完全选中
 
-			if(!dataCoptEl){
-				pushNodeTextContent(node);
-				continue;
-			}
+				// 文本未被完全选中
+				if(node === range.startContainer || node === range.endContainer){
+					if(range.startOffset !== 0 || range.endOffset !== range.endContainer.textContent.length){
+						pushNodeTextContent(node);
+						continue;
+					}
+				}
+	
+				// 当前可复制单元被截断
+				const dataCoptElNodeList = lib.getTextNodeList(dataCoptEl);
+				if(node !== dataCoptElNodeList[0]){
+					pushNodeTextContent(node);
+					continue;
+				}else if(dataCoptElNodeList.at(-1) !== range.endContainer && dataCoptElNodeList.includes(range.endContainer)){
+					pushNodeTextContent(node);
+					continue;
+				}
 
-			if(set.has(dataCoptEl)){
-				continue;
-			}
-
-			// 这里是当前可复制整体的第一个文本节点
-			// 检查这个可复制整体是否被完全选中
-
-			// const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-			const dataCoptElNodeList = lib.getTextNodeList(dataCoptEl);
-			if(node !== dataCoptElNodeList[0]){
-				// 这个可复制整体被截断了
-				pushNodeTextContent(node);
-				continue;
-			}
-
-			// 处理这个完整的可复制整体
-			set.add(dataCoptEl);
-			textList.push(dataCoptEl.getAttribute('data-copy'));
-			// 如果这个元素是块级的, 那么需要补全它的换行符
-			if(dataCoptEl.classList.contains('--block')){
-				textList.push('\n');
+				// 这是完整的可复制整体
+				if(true){
+					set.add(dataCoptEl);
+					textList.push(dataCoptEl.getAttribute('data-copy'));
+					// ! 这个问题在后端被修复
+					// ! 先前只有 katex 和 code 存在 --block 属性, 已在其他代码中删除这部分
+					// 如果这个元素是块级的, 那么需要补全它的换行符
+					// if(dataCoptEl.classList.contains('--block')){
+					// 	textList.push('\n');
+					// }
+				}
 			}
 		}
 
