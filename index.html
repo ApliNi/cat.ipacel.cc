@@ -18,8 +18,18 @@
 	<meta name="theme-color" content="#FF1277">
 	<link rel="manifest" href="./manifest.webmanifest?v=3.10">
 
+	<link rel="preload" href="./l2/marked-extended-latex.js" as="script" crossorigin="anonymous">
+	<link rel="preload" href="https://lib.baomitu.com/mermaid/11.1.1/mermaid.esm.mjs" as="script" crossorigin="anonymous">
+	<link rel="preload" href="./l2/marked-emoji.json" as="fetch" crossorigin="anonymous">
+	<link rel="preload" href="https://ipacel.cc/dav/command.png" as="image">
+	<link rel="preload" href="https://ipacel.cc/dav/command_2.png" as="image">
+	<link rel="preload" href="https://ipacel.cc/dav/command_3.png" as="image">
+	<link rel="preload" href="https://ipacel.cc/dav/HarmonyOS_Sans_SC_Medium.subset.woff2" as="font" crossorigin="anonymous">
+	<link rel="preload" href="https://ipacel.cc/dav/JetBrainsMono-Regular.woff2" as="font" crossorigin="anonymous">
+	<link rel="preload" href="https://ipacel.cc/dav/Ubuntu-Regular.subset.woff2?v=2" as="font" crossorigin="anonymous">
+
 	<link rel="stylesheet" href="https://ipacel.cc/dav/cakeL.css?v=1.101">
-	<link rel="stylesheet" href="./ui.css?v=25.10.19">
+	<link rel="stylesheet" href="./ui.css?v=25.10.28">
 	<link rel="stylesheet" href="./l2/highlight.css?v=2">
 	<link rel="stylesheet" href="./l2/katex/katex.min.css?v=0.16.11">
 
@@ -29,19 +39,10 @@
 	<script src="./l2/katex/katex.min.js?v=0.16.11" defer></script>
 
 	<script type="module" defer>
-		import { lib, stat } from './main.js?v=25.10.131';
+		import { lib, stat } from './main.js?v=25.10.168';
 		window.lib = lib;
 		window.stat = stat;
 	</script>
-
-	<link rel="preload" href="./l2/marked-extended-latex.js" as="script" crossorigin="anonymous">
-	<link rel="preload" href="./l2/marked-emoji.json" as="fetch" crossorigin="anonymous">
-	<link rel="preload" href="https://ipacel.cc/dav/command.png" as="image">
-	<link rel="preload" href="https://ipacel.cc/dav/command_2.png" as="image">
-	<link rel="preload" href="https://ipacel.cc/dav/command_3.png" as="image">
-	<link rel="preload" href="https://ipacel.cc/dav/HarmonyOS_Sans_SC_Medium.subset.woff2" as="font" crossorigin="anonymous">
-	<link rel="preload" href="https://ipacel.cc/dav/JetBrainsMono-Regular.woff2" as="font" crossorigin="anonymous">
-	<link rel="preload" href="https://ipacel.cc/dav/Ubuntu-Regular.subset.woff2?v=2" as="font" crossorigin="anonymous">
 
 	<script>
 		window.WebFontConfig = {

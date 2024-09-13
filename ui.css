@@ -393,6 +393,14 @@ body {
 				}
 			}
 
+			.mermaid {
+				display: flex;
+				justify-content: center;
+				margin: 7px;
+
+				/* & > svg {} */
+			}
+
 			ul {
 				padding-inline-start: 30px;
 				li::marker {
@@ -544,26 +552,37 @@ body {
 					::selection {
 						background: #ffffff42;
 					}
+
 					code {
 						background-color: #E6F2F8;
 						&::selection, *::selection {
 							background: #34beff33;
 						}
 					}
+
 					li::marker {
 						color: #dee7ec;
 					}
+
 					input {
 						border-color: #dee7ec;
 						&:checked {
 							border-color: #dee7ec;
 						}
 					}
+
 					table td, img {
 						background-color: #dedede17;
 					}
+
 					a {
 						color: #e3f0ff;
+					}
+				}
+
+				.mermaid {
+					& > svg {
+						filter: invert(100%) brightness(120%);
 					}
 				}
 			}
@@ -605,11 +624,19 @@ body {
 					background-color: #15559ad4;
 					color: var(--a1);
 				}
+
 				&.ai {
 					background-color: #212121d1;
 				}
+
 				table td, img {
 					background-color: #4747472e;
+				}
+
+				.mermaid {
+					::selection {
+						filter: invert(100%);
+					}
 				}
 			}
 		}

@@ -1,4 +1,5 @@
 import markedExtendedLatex from "./l2/marked-extended-latex.js";
+import mermaid from 'https://lib.baomitu.com/mermaid/11.1.1/mermaid.esm.mjs';
 
 export const stat = {
 	login: false,
@@ -180,7 +181,7 @@ const fn = {
 			delMsg(dialog, loading, false);
 		}
 		
-		addMsg({ dialog, type: 'ai', html: renderPluginsMsg(msg.plugins, dialog) });
+		addMsg({ dialog, type: 'ai', html: await renderPluginsMsg(msg.plugins, dialog) });
 
 		lib.saveMsg('ai', msg.plugins);
 	},
@@ -196,6 +197,11 @@ const fn = {
 		lib.dog('login', true);
 	},
 };
+
+mermaid.initialize({
+	startOnLoad: false,
+	theme: 'dark',
+});
 
 marked.use(markedExtendedLatex({
 	render: (formula, displayMode) => {
@@ -213,7 +219,27 @@ marked.use(markedExtendedLatex({
 }));
 
 marked.use({
+	async: true,
 	breaks: true,
+
+	// walkTokens: async (token) => {
+	// 	if(token.type === 'code'){
+	// 		if(token.lang === 'mermaid'){
+	// 			mermaid.initialize({
+	// 				startOnLoad: false,
+	// 				theme: 'dark',
+	// 			});
+	// 			const graphType = await mermaid.detectType(token.text);
+	// 			const graph = await mermaid.render(graphType, token.text);
+	// 			const svg = graph.svg
+	// 				.replace(/viewBox="[-\.\d]+ [-\.\d]+ ([-\.\d]+) ([-\.\d]+)"/, `viewBox="0 0 $1 $2"`)
+	// 				// .replace(`id="flowchart"`, ``)
+	// 			;
+	// 			token.html = svg;
+	// 		}
+	// 	}
+	// },
+
 	renderer: {
 
 		link: (token) => {
@@ -228,7 +254,10 @@ marked.use({
 		},
 
 		code: (token) => {
-			let { lang, raw, text } = token;
+			let { lang, raw, text, html } = token;
+			if(lang === 'mermaid'){
+				return `<div class="mermaid" data-copy="${lib.htmlAttrEscape(text)}">${text}</div>`;
+			}
 			const attrLang = lib.htmlAttrEscape(lang || '');
 			return `<pre><code class="hljs" data-lang="${attrLang}" title="${attrLang}" data-copy="${lib.htmlAttrEscape(text)}">${hljs.highlightAuto(text, lang ? [ lang ] : undefined).value}</code></pre>`;
 		},
@@ -252,10 +281,10 @@ marked.use({
 	},
 });
 
-const renderPluginsMsg = (plugins, dialog) => {
+const renderPluginsMsg = async (plugins, dialog) => {
 
-	const markdownRender = (text) => {
-		const html = marked.parse(text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, ''));
+	const markdownRender = async (text) => {
+		const html = await marked.parse(text.replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, ''));
 		// return html;
 		return `<div data-copy="${lib.htmlAttrEscape(text)}">${html}</div>`;
 	};
@@ -265,7 +294,7 @@ const renderPluginsMsg = (plugins, dialog) => {
 		switch(li.type){
 
 			case 'text':
-				htmlList.push(`<span>${markdownRender(li.data.text)}</span>`);
+				htmlList.push(`<span>${(await markdownRender(li.data.text))}</span>`);
 				break;
 			
 			case 'image':
@@ -372,7 +401,7 @@ const addMsg = async (opt) => {
 
 	return new Promise((resolve, reject) => {
 
-		requestAnimationFrame(() => {
+		requestAnimationFrame(async () => {
 			// dialog.setAttribute('data-update-time', Date.now());
 			const msg = document.createElement('div');
 			msg.innerHTML = html;
@@ -401,6 +430,18 @@ const addMsg = async (opt) => {
 				}else{
 					dialog.appendChild(msg);
 				}
+			}
+
+			// 元素渲染到页面后的处理
+			try{
+				if(msg.querySelector('.mermaid')){
+					await mermaid.run();
+					for(const svg of Array.from(msg.querySelectorAll('.mermaid > svg'))){
+						svg.setAttribute('viewBox', `0 0 ${svg.viewBox.animVal.width} ${svg.viewBox.animVal.height}`);
+					}
+				}
+			}catch(err){
+				console.error(err);
 			}
 
 			resolve(msg);
@@ -543,11 +584,11 @@ export const lib = {
 			const msg = msgList[i];
 			if(msg.role === 'user'){
 				// 创建新对话框
-				addMsg({ dialog, type: 'user', html: renderPluginsMsg(msg.plugins, dialog), toTop: true });
+				addMsg({ dialog, type: 'user', html: await renderPluginsMsg(msg.plugins, dialog), toTop: true });
 				dialog = createDialog(0, false);
 			}
 			if(msg.role === 'ai'){
-				addMsg({ dialog, type: 'ai', html: renderPluginsMsg(msg.plugins, dialog), toTop: false });
+				addMsg({ dialog, type: 'ai', html: await renderPluginsMsg(msg.plugins, dialog), toTop: false });
 			}
 
 			await lib.sleep(delay);
@@ -1173,7 +1214,7 @@ dom.mainSendBtn.addEventListener('click', async () => {
 	}
 	
 	
-	await addMsg({ dialog, type: 'user', html: renderPluginsMsg(uiUserMsgPlugins, dialog), toTop: true });
+	await addMsg({ dialog, type: 'user', html: await renderPluginsMsg(uiUserMsgPlugins, dialog), toTop: true });
 	addMsg({ dialog, type: 'ai', addClass: 'loading' });
 	
 	socket.send(JSON.stringify({ type:'userMsg', plugins: uiUserMsgPlugins, time }));
@@ -1304,7 +1345,7 @@ document.addEventListener('copy', (event) => {
 			const commonAncestorTextNodeList = lib.getTextNodeList(range.commonAncestorContainer);
 			const set = new Set();
 			let runFor = false;
-			let isNewLine = false;
+			let PreviousNewLine = false;
 			for(const node of commonAncestorTextNodeList){
 	
 				// 绕过未选中的节点
@@ -1316,10 +1357,10 @@ document.addEventListener('copy', (event) => {
 				if(node === range.endContainer) runFor = false;
 
 				// 跳过连续的换行
-				if(isNewLine && node.data === '\n'){
+				if(PreviousNewLine && node.data === '\n'){
 					continue;
 				}
-				isNewLine = node.data === '\n';
+				PreviousNewLine = node.data === '\n';
 	
 				const dataCoptEl = node.parentNode.closest('*[data-copy]');
 	
