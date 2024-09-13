@@ -201,6 +201,15 @@ const fn = {
 mermaid.initialize({
 	startOnLoad: false,
 	theme: 'dark',
+	themeVariables: {
+		fontFamily: 'JetBrainsMono, HarmonyOS, Trebuchet MS, Segoe UI Emoji',
+		primaryTextColor: '#adb4bc',
+		pie1: '#0099ff',
+		pie2: '#ff9900',
+		pie3: '#ff3333',
+		pieStrokeWidth: '0px',
+		pieOuterStrokeWidth: '0px',
+	},
 });
 
 marked.use(markedExtendedLatex({
@@ -434,12 +443,14 @@ const addMsg = async (opt) => {
 
 			// 元素渲染到页面后的处理
 			try{
-				if(msg.querySelector('.mermaid')){
-					await mermaid.run();
-					for(const svg of Array.from(msg.querySelectorAll('.mermaid > svg'))){
-						svg.setAttribute('viewBox', `0 0 ${svg.viewBox.animVal.width} ${svg.viewBox.animVal.height}`);
+				setTimeout(async () => {
+					if(msg.querySelector('.mermaid')){
+						await mermaid.run();
+						for(const svg of Array.from(msg.querySelectorAll('.mermaid > svg'))){
+							svg.setAttribute('viewBox', `0 0 ${svg.viewBox.animVal.width} ${svg.viewBox.animVal.height}`);
+						}
 					}
-				}
+				}, 0);
 			}catch(err){
 				console.error(err);
 			}
