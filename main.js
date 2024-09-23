@@ -4,30 +4,13 @@ import mermaid from 'https://lib.baomitu.com/mermaid/11.1.1/mermaid.esm.mjs';
 export const stat = {
 	login: false,
 	connect: false,
-
 	scroll: false,
-
-	mainMsgInp: {
-		text: '',
-		pos: 0,
-		stack: [ { text: '', pos: 0 } ],
-		stackIdx: 0,
-	},
-
-	mainMsgInpAutoSave: {
-		text: '',
-		pos: 0,
-		stackIdx: 0,
-	},
-
 	clearMsg: false,
-
 	copyEl: null,
 };
 
 const config = {
 	reconnect: true,
-	maxMsgInpLength: 3072,
 	maxImgCount: 4,
 	maxImgBase64Length: 4 * 1024 * 1024,
 	saveMsgLength: 384,
@@ -42,12 +25,11 @@ const dom = {
 	mainBtnBox: document.querySelector('#mainBtnBox'),
 	mainToolBtn: document.querySelector('#mainToolBtn'),
 	mainMsgInp: document.querySelector('#mainMsgInp'),
+	mainMsgInpHeightTest: document.querySelector('#mainMsgInpHeightTest'),
 	mainFileInp: document.querySelector('#mainFileInp'),
 	inpFileBox: document.querySelector('#inpFileBox'),
 	msgList: document.querySelector('#msgList'),
-
 	loginBody: document.querySelector('#loginBody'),
-
 	toTopBtn: document.querySelector('#toTopBtn'),
 };
 
@@ -176,7 +158,7 @@ const fn = {
 		if(!dialog){
 			return;
 		}
-		const loading = dom.msgList.querySelector(`.li.__${msg.time} .loading`);
+		const loading = dom.msgList.querySelector(`.li.__${msg.time} .msg.ai.loading`);
 		if(loading){
 			delMsg(dialog, loading, false);
 		}
@@ -685,37 +667,6 @@ export const lib = {
 		};
 	},
 
-	syncMainInpStat: (loadMode = false) => {
-		if(loadMode){
-			try{
-				stat.mainMsgInp = JSON.parse(localStorage.getItem('mainMsgInpAutoSave')) || stat.mainMsgInp;
-				const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
-				dom.mainMsgInp.textContent = text;
-				lib.setCaretPos(dom.mainMsgInp, pos);
-			}catch(ignoreErr){}
-		}else{
-			const { text, pos, stackIdx } = stat.mainMsgInp;
-			if(stat.mainMsgInpAutoSave.text !== text || stat.mainMsgInpAutoSave.pos !== pos || stat.mainMsgInpAutoSave.stackIdx !== stackIdx){
-				stat.mainMsgInpAutoSave.text = text;
-				stat.mainMsgInpAutoSave.pos = pos;
-				stat.mainMsgInpAutoSave.stackIdx = stackIdx;
-				Promise.resolve().then(() => {
-					localStorage.setItem('mainMsgInpAutoSave', JSON.stringify(stat.mainMsgInp));
-				});
-			}
-		}
-	},
-
-	clearMainInpStat: () => {
-		dom.mainMsgInp.textContent = '';
-		stat.mainMsgInp.text = '';
-		stat.mainMsgInp.pos = 0;
-		stat.mainMsgInp.stack = [
-			{ text: '', pos: 0 }
-		];
-		stat.mainMsgInp.stackIdx = 0;
-	},
-
 	token: (inp = null) => {
 		if(inp){
 			localStorage.setItem('token', inp);
@@ -859,6 +810,12 @@ export const lib = {
 		return textNodeList;
 	},
 
+	mainMsgInpEvent: () => {
+		dom.mainMsgInpHeightTest.textContent = dom.mainMsgInp.value;
+		dom.mainMsgInpHeightTest.innerHTML += `<br />`;
+		localStorage.setItem('mainMsgInpAutoSaveText', dom.mainMsgInp.value);
+	},
+
 	htmlEscape: (text) => `${text || ''}`
 		.replace(/&/g, '&amp;')
 		.replace(/\$/g, '&#36;')
@@ -970,49 +927,8 @@ const onFile = {
 	},
 };
 
-dom.mainMsgInp.addEventListener('paste', (event) => {
-
-	event.preventDefault();
-
-	for(const item of event.clipboardData.items){
-		
-		if(item.type === 'text/plain'){
-			item.getAsString((text) => {
-
-				// 如果有选中文本
-				const range = window.getSelection().getRangeAt(0);
-				const startOffset = range.startOffset;
-				const endOffset = range.endOffset;
-				if(startOffset < endOffset){
-					// 删除选中文本
-					const newText = dom.mainMsgInp.textContent.slice(0, startOffset) + dom.mainMsgInp.textContent.slice(endOffset);
-					dom.mainMsgInp.textContent = newText;
-					lib.setCaretPos(dom.mainMsgInp, startOffset);
-				}
-
-				const maxLength = dom.mainMsgInp.textContent.length + text.length;
-			
-				text = maxLength > config.maxMsgInpLength ? text.slice(0, config.maxMsgInpLength - maxLength) : text;
-					
-				// 插入到当前光标处
-				const pos = lib.getCaretPos(dom.mainMsgInp);
-				const newText = dom.mainMsgInp.textContent.slice(0, pos) + text + dom.mainMsgInp.textContent.slice(pos);
-				
-				dom.mainMsgInp.textContent = newText;
-				// 将光标移动到插入之后的位置
-				lib.setCaretPos(dom.mainMsgInp, pos + text.length);
-			
-				// 触发输入事件
-				dom.mainMsgInp.dispatchEvent(new Event('input'));
-			});
-		}
-	}
-});
-
 // 全局的文件粘贴
 document.body.addEventListener('paste', (event) => {
-
-	event.preventDefault();
 
 	for(const item of event.clipboardData.items){
 		
@@ -1070,75 +986,6 @@ document.body.addEventListener('drop', async (event) => {
 	}
 });
 
-dom.mainMsgInp.addEventListener('keydown', (event) => {
-	
-	// 自己实现了撤销和重做 :(
-	if(event.ctrlKey){
-		if(event.key === 'z'){
-			event.preventDefault();
-			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx > 0 ? stat.mainMsgInp.stackIdx - 1 : 0;
-			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
-			dom.mainMsgInp.textContent = text;
-			lib.setCaretPos(dom.mainMsgInp, pos);
-			lib.syncMainInpStat();
-		}else if(event.key === 'y'){
-			event.preventDefault();
-			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stackIdx < stat.mainMsgInp.stack.length - 1 ? stat.mainMsgInp.stackIdx + 1 : stat.mainMsgInp.stack.length - 1;
-			const { text, pos } = stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx];
-			dom.mainMsgInp.textContent = text;
-			lib.setCaretPos(dom.mainMsgInp, pos);
-			lib.syncMainInpStat();
-		}
-		return;
-	}
-	
-	if(event.key === 'Enter'){
-		if(!event.shiftKey){
-			// 如果文本中已经存在至少一个换行, 则不发送消息
-			if(!/\n/.test(dom.mainMsgInp.textContent)){
-				event.preventDefault();
-				dom.mainSendBtn.click();
-			}
-		}
-	}
-});
-
-dom.mainMsgInp.addEventListener('input', (event) => {
-
-	if(dom.mainMsgInp.textContent.length > config.maxMsgInpLength){
-		dom.mainMsgInp.textContent = stat.mainMsgInp.text;
-		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
-	}else{
-		stat.mainMsgInp.text = dom.mainMsgInp.textContent.replace(/\r\n$/, '');
-		stat.mainMsgInp.pos = Math.min(lib.getCaretPos(dom.mainMsgInp), stat.mainMsgInp.text.length);
-
-		dom.mainMsgInp.textContent = stat.mainMsgInp.text;	// 合并为一个文本节点
-		lib.setCaretPos(dom.mainMsgInp, stat.mainMsgInp.pos);
-
-		// 支持撤销功能
-		if(stat.mainMsgInp.text !== stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx]?.text){
-			if(stat.mainMsgInp.stackIdx < stat.mainMsgInp.stack.length - 1){
-				stat.mainMsgInp.stack = stat.mainMsgInp.stack.slice(0, stat.mainMsgInp.stackIdx + 1);
-			}
-	
-			stat.mainMsgInp.stack.push({
-				text: stat.mainMsgInp.text,
-				pos: stat.mainMsgInp.pos,
-			});
-			if(stat.mainMsgInp.stack.length > 256){
-				stat.mainMsgInp.stack.shift();
-			}
-			stat.mainMsgInp.stackIdx = stat.mainMsgInp.stack.length - 1;
-		}
-	}
-});
-
-dom.mainMsgInp.addEventListener('click', () => {
-	stat.mainMsgInp.pos = lib.getCaretPos(dom.mainMsgInp);
-	stat.mainMsgInp.stack[stat.mainMsgInp.stackIdx].pos = stat.mainMsgInp.pos;
-	lib.syncMainInpStat();
-});
-
 dom.inpFileBox.addEventListener('click', (event) => {
 	const target = event.target;
 	if(target.classList.contains('li')){
@@ -1149,6 +996,19 @@ dom.inpFileBox.addEventListener('click', (event) => {
 	}
 });
 
+dom.mainMsgInp.addEventListener('input', lib.mainMsgInpEvent);
+
+dom.mainMsgInp.addEventListener('keydown', (event) => {
+	if(event.key === 'Enter'){
+		if(!event.shiftKey){
+			// 如果文本中已经存在至少一个换行, 则不发送消息
+			if(!/\n/.test(dom.mainMsgInp.value)){
+				event.preventDefault();
+				dom.mainSendBtn.click();
+			}
+		}
+	}
+});
 
 dom.mainSendBtn.addEventListener('click', async () => {
 
@@ -1165,10 +1025,10 @@ dom.mainSendBtn.addEventListener('click', async () => {
 	const getUserInp = async () => {
 		// 处理输入框
 		if(true){
-			const inpText = dom.mainMsgInp.textContent.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
+			const inpText = dom.mainMsgInp.value.trim().replace(/[\u200B\u200C\u200D\u200E\u200F\uFEFF]+/g, '');
 			if(inpText){
-				lib.clearMainInpStat();
-				lib.syncMainInpStat();
+				dom.mainMsgInp.value = '';
+				lib.mainMsgInpEvent();
 				uiUserMsgPlugins.push({ type: 'text', data: { text: inpText }});
 			}else{
 				return;
@@ -1286,48 +1146,13 @@ document.body.addEventListener('mousedown', (event) => {
 	stat.copyEl = null;
 });
 
-document.addEventListener('copy', (event) => {
+dom.msgList.addEventListener('copy', (event) => {
 
 	// 存在 data-copy 属性
 	if(stat.copyEl && stat.copyEl.hasAttribute('data-copy')){
 		event.preventDefault();
 		const copyText = stat.copyEl.getAttribute('data-copy');
 		lib.copy(copyText.trim());
-
-		// ! 现在所有可被自动选中的元素都有 data-copy 属性
-		// if(stat.copyEl.hasAttribute('data-copy')){
-			
-		// }else{
-
-		// 	// 按顺序遍历这个被选中的元素中的所有子元素, 单独处理存在 data-copy 的和其他元素
-			
-		// 	const textNodeList = lib.getTextNodeList(stat.copyEl);
-
-		// 	const textList = [];
-		// 	const set = new Set();	// 去除已被处理的 data-copy 元素
-			
-		// 	for(const node of textNodeList){
-
-		// 		const dataCoptEl = node.parentNode.closest('*[data-copy]');
-		// 		if(dataCoptEl){
-		// 			if(set.has(dataCoptEl)){
-		// 				continue;
-		// 			}
-		// 			if(dataCoptEl){
-		// 				set.add(dataCoptEl);
-		// 				textList.push(dataCoptEl.getAttribute('data-copy'));
-		// 				// 如果这个元素是块级的, 那么需要补全它的换行符
-		// 				if(dataCoptEl.classList.contains('--block')){
-		// 					textList.push('\n');
-		// 				}
-		// 			}
-		// 		}else{
-		// 			textList.push(node.textContent);
-		// 		}
-		// 	}
-
-		// 	lib.copy(textList.join('').trim());
-		// }
 	}else{
 		const selection = window.getSelection();
 		if(selection.toString() === ''){
@@ -1409,12 +1234,6 @@ document.addEventListener('copy', (event) => {
 				if(true){
 					set.add(dataCoptEl);
 					textList.push(dataCoptEl.getAttribute('data-copy'));
-					// ! 这个问题在后端被修复
-					// ! 先前只有 katex 和 code 存在 --block 属性, 已在其他代码中删除这部分
-					// 如果这个元素是块级的, 那么需要补全它的换行符
-					// if(dataCoptEl.classList.contains('--block')){
-					// 	textList.push('\n');
-					// }
 				}
 			}
 		}
@@ -1450,9 +1269,10 @@ Promise.resolve().then(async () => {
 
 	_runWebSocket();
 
-	document.querySelector('.main').classList.remove('--quit');
+	dom.mainMsgInp.value = localStorage.getItem('mainMsgInpAutoSaveText') || '';
+	lib.mainMsgInpEvent();
 
-	lib.syncMainInpStat(true);
+	document.querySelector('.main').classList.remove('--quit');
 
 	if(true){
 		const res = await fetch('./l2/marked-emoji.json');
@@ -1462,10 +1282,6 @@ Promise.resolve().then(async () => {
 			renderer: (token) => `<span class="mdEmoji">${token.emoji}</span>`,
 		}));
 	}
-
-	setInterval(() => {
-		lib.syncMainInpStat();
-	}, 300);
 
 	await lib.loadMsg(64);
 });

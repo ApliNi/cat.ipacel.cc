@@ -87,40 +87,37 @@ body {
 			color: #7F7F7F80;
 		}
 
-		#mainMsgInp {
-			white-space: pre-wrap;
-			tab-size: 4;
-			display: block;
-			outline: none;
-			border-radius: 0;
-			background-color: #00000000;
-			width: 100%;
-			height: fit-content;
+		#mainMsgInpHeightTest, #mainMsgInp {
 			min-height: 105px;
+			width: 100%;
 			padding: 16px;
 			padding-bottom: 52px;
 			font-size: 0.875rem;
-			outline: 0;
-			cursor: url('https://ipacel.cc/dav/command_3.png'), default;
-			user-select: text;
-			-webkit-user-select: text;
+			line-height: normal;
+			margin: 0 !important;
+			white-space: pre-wrap;
+			tab-size: 4;
+		}
 
-			&:empty::before{
-				content: attr(placeholder);
-				color: var(--t);
-				padding: 0 7px;
-			}
+		#mainMsgInpHeightTest {
+			visibility: hidden !important;
+		}
 
-			img {
-				display: block;
-				max-height: 15vh;
-				min-height: 64px;
-				min-width: 64px;
-				max-width: 30%;
-				/* width: fit-content; */
-				border-radius: 7px;
-				margin: 7px;
-				-webkit-user-drag: auto;
+		#mainMsgInp {
+			position: absolute;
+			top: 0;
+			left: 0;
+			display: block;
+			outline: none;
+			border: none;
+			resize: none;
+			overflow-x: hidden;
+			overflow-y: hidden;
+			height: 100%;
+			background-color: #00000000;
+
+			&::-webkit-input-placeholder {
+				color: #7F7F7F80;
 			}
 		}
 
@@ -397,6 +394,7 @@ body {
 				display: flex;
 				justify-content: center;
 				margin: 7px;
+				pointer-events: all;
 
 				/* & > svg {} */
 			}
@@ -631,12 +629,6 @@ body {
 
 				table td, img {
 					background-color: #4747472e;
-				}
-
-				.mermaid {
-					::selection {
-						filter: invert(100%);
-					}
 				}
 			}
 		}
