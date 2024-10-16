@@ -291,6 +291,9 @@ body {
 			&.loading {
 				&::before {
 					content: '[/]';
+					margin: 5px 0;
+					font-size: 15px;
+					display: block;
 					
 					animation-fill-mode: forwards;
 					animation: aiLoading 0.85s infinite;

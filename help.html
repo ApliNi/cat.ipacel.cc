@@ -156,23 +156,23 @@
 					<div class="gridBox">
 						<div class="cmdBox">
 							<h3>消息解析</h3>
-							<p>图像分析, 发送网络图片, 发送表情, 结束对话</p>
-						</div>
-						<div class="cmdBox">
-							<h3>消息格式</h3>
-							<p>Markdown, LaTeX, Mermaid. *OneBot11</p>
+							<p>图像分析*, 图像文本识别, 发送网络图片, 发送表情, 点赞, 艾特</p>
 						</div>
 						<div class="cmdBox">
 							<h3>网络能力</h3>
-							<p>百度百科, 萌娘百科, 聚合题库. WolframAlpha, 搜索引擎. 访问网页</p>
+							<p>百度百科, 萌娘百科, 聚合题库. WolframAlpha, 搜索引擎. 访问网页*</p>
 						</div>
 						<div class="cmdBox">
 							<h3>工具使用</h3>
-							<p>计算器, 文本绘图</p>
+							<p>计算器, 绘图*</p>
 						</div>
 						<div class="cmdBox">
 							<h3>其他能力</h3>
-							<p>学习 (持久化)</p>
+							<p>学习 (持久化, 测试), 专家模块*</p>
+						</div>
+						<div class="cmdBox">
+							<h3>消息格式</h3>
+							<p>Markdown, LaTeX, Mermaid</p>
 						</div>
 					</div>
 
@@ -183,6 +183,9 @@
 							但这项特殊的功能不如键值对配置那样清晰可见,
 							我们得到的结果往往受限于语言模型的理解和执行能力,
 							通常需要开发者们进行大量的测试才能达到比较好的效果.
+						</p>
+						<p>
+							另外, 值得一提的是, CiAt 的提示词中不存在 "暴力, 强迫, 欺骗" 等在我们看来不那么友好的内容 (｡・̀ᴗ-)✧
 						</p>
 					</div>
 
@@ -217,8 +220,8 @@
 				<div class="side">
 					<h2>指令</h2>
 					<p>指令通过固定的消息格式来运行功能, 它的功能明确且单一.</p>
-					<li>指令参数中的方括号 `[]` 代表这是一个可选参数, 省略时使用内置的默认值</li>
-					<li>花括号 `{}` 代表这是一个必选参数, 省略时指令无法运行</li>
+					<li>方括号 `[]` 代表这是一个可选参数, 省略时使用内置的默认值或指向不同的功能</li>
+					<li>花括号 `{}` 代表这是一个必选参数, 缺失时指令不会运行</li>
 					<li>其中部分指令可以使用波浪线 `~` 进行占位以选择性的省略部分参数</li>
 
 				</div>
@@ -265,9 +268,9 @@
 						<div class="cmdBox">
 							<h3>钓鱼</h3>
 							<div class="cmd">
-								<p class="main">钓鱼 [赠送 $1], 收杆</p>
+								<p class="main">钓鱼 [库存], 收杆</p>
+								<p class="main">钓鱼 [赠送 $1]</p>
 								<p class="args" title="$1">{物品} [数量] {at}</p>
-								<p class="demo">钓鱼赠送 生鳕鱼 64 @ApliNi</p>
 							</div>
 							<p>钓鱼游戏功能, 库存持久化, 支持转移自己持有的物品</p>
 						</div>
@@ -431,8 +434,8 @@
 							<h3>重置记忆</h3>
 							<div class="cmd">
 								<p class="main">!reset</p>
-								<p class="args">memory|study</p>
-								<p class="demo">!reset memory study</p>
+								<p class="args">memory</p>
+								<p class="demo">!reset memory</p>
 							</div>
 							<p>重置记忆和学习数据.</p>
 						</div>

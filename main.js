@@ -158,8 +158,8 @@ const fn = {
 		if(!dialog){
 			return;
 		}
-		const loading = dom.msgList.querySelector(`.li.__${msg.time} .msg.ai.loading`);
-		if(loading){
+		const loadingList = dialog.querySelectorAll(`.msg.ai.loading`);
+		for(const loading of loadingList){
 			delMsg(dialog, loading, false);
 		}
 		
@@ -355,9 +355,9 @@ const createDialog = (mark = 0, toTop = true) => {
 	return dialog;
 };
 
-const delMsg = (dialog, el, reHeight = true) => {
+const delMsg = (dialog, el, resetHeight = true) => {
 
-	if(reHeight){
+	if(resetHeight){
 		const height = dialog.offsetHeight - el.offsetHeight - config.liMsgHeightOffset;
 		dialog.style.height = `${height}px`;
 	}
@@ -393,6 +393,7 @@ const addMsg = async (opt) => {
 	return new Promise((resolve, reject) => {
 
 		requestAnimationFrame(async () => {
+
 			// dialog.setAttribute('data-update-time', Date.now());
 			const msg = document.createElement('div');
 			msg.innerHTML = html;
@@ -455,7 +456,8 @@ const addMsg = async (opt) => {
 
 				const height = Array.from(dialog.childNodes).reduce((acc, child) => child.classList.contains('--neglect') ? acc : acc + child.offsetHeight + config.liMsgHeightOffset, 0) + config.liHeightOffset;
 				
-				dialog.style.height = `${height}px`;
+				
+				dialog.style.height = `${height}px`;	// 不知从哪来的 8px 误差
 				msg.classList.remove('--quit');
 
 				dialog.addEventListener('transitionend', function handler(){
@@ -465,7 +467,7 @@ const addMsg = async (opt) => {
 							dialog.removeAttribute('style');
 						}
 					}
-					
+
 					dialog.removeEventListener('transitionend', handler);
 				});
 			});
@@ -835,12 +837,6 @@ export const lib = {
 const onFile = {
 
 	image: async (base64) => {
-			
-		// 达到图片上传数量限制
-		const imgList = Array.from(dom.inpFileBox.querySelectorAll('img.file'));
-		if(imgList.length >= config.maxImgCount){
-			return;
-		}
 
 		const fileType = base64.split(';')[0].split('/')[1];
 		if(!/^(png|jpg|jpeg)$/i.test(fileType)){
@@ -899,6 +895,12 @@ const onFile = {
 				}
 			}
 		}
+			
+		// 达到图片上传数量限制
+		const imgList = Array.from(dom.inpFileBox.querySelectorAll('img.file'));
+		if(imgList.length >= config.maxImgCount){
+			return;
+		}
 
 		// 内容和已有图片相同
 		if(imgList.some((img) => base64 === img.src)){
@@ -918,17 +920,15 @@ const onFile = {
 		div.setAttribute('class', 'li');
 		div.appendChild(img);
 
+		dom.inpFileBox.appendChild(div);
 		requestAnimationFrame(() => {
-			dom.inpFileBox.appendChild(div);
-			requestAnimationFrame(() => {
-				div.classList.add('--join');
-			});
+			div.classList.add('--join');
 		});
 	},
 };
 
 // 全局的文件粘贴
-document.body.addEventListener('paste', (event) => {
+document.body.addEventListener('paste', async (event) => {
 
 	for(const item of event.clipboardData.items){
 		
